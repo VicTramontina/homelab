@@ -1,0 +1,21 @@
+{
+  "aio_username": "{{ aio_username }}",
+  "aio_key": "{{ vault_aio_key }}",
+  "homelab_dir": "{{ homelab_dir }}",
+  "compose_dir": "{{ homelab_dir }}/server",
+  "r2_bucket": "{{ r2_bucket }}",
+  "backups_to_keep": {{ backups_to_keep }},
+  "games": {
+{% for name, game in games.items() %}
+    "{{ name }}": {
+      "compose_service": "{{ game.compose_service }}",
+      "rcon_host": "{{ game.rcon_host }}",
+      "rcon_port": {{ game.rcon_port }},
+      "rcon_pass": "{{ vars['vault_rcon_pass_' + name] }}",
+      "max_players": {{ game.max_players }},
+      "volume_path": "{{ game.volume_path }}"
+    }{% if not loop.last %},{% endif %}
+
+{% endfor %}
+  }
+}

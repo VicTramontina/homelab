@@ -1,0 +1,14 @@
+[Unit]
+Description=homelab activity-monitor (idle detection via RCON player counts)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 {{ homelab_dir }}/activity_monitor.py
+Restart=on-failure
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target

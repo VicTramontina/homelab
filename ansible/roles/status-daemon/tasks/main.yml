@@ -1,0 +1,27 @@
+---
+- name: Copy shared RCON client module
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/files/rcon_client.py"
+    dest: "{{ homelab_dir }}/rcon_client.py"
+    mode: "0644"
+
+- name: Copy status_daemon.py
+  ansible.builtin.copy:
+    src: status_daemon.py
+    dest: "{{ homelab_dir }}/status_daemon.py"
+    mode: "0755"
+  notify: Reload systemd and restart status-daemon
+
+- name: Render status-daemon systemd unit
+  ansible.builtin.template:
+    src: status-daemon.service.j2
+    dest: /etc/systemd/system/homelab-status-daemon.service
+    mode: "0644"
+  notify: Reload systemd and restart status-daemon
+
+- name: Enable and start status-daemon
+  ansible.builtin.systemd:
+    name: homelab-status-daemon
+    enabled: true
+    state: started
+    daemon_reload: true

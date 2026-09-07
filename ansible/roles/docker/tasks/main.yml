@@ -1,0 +1,98 @@
+---
+- name: Install Docker prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Add Docker apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch={{ ansible_facts.deb_architecture }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+
+- name: Install Docker Engine and Compose plugin
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+
+- name: Enable and start Docker
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Create homelab base directory
+  ansible.builtin.file:
+    path: "{{ homelab_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Create server directories (compose, volumes, backups)
+  ansible.builtin.file:
+    path: "{{ homelab_dir }}/server/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - volumes
+    - backups
+
+- name: Copy Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../server/docker-compose.yml"
+    dest: "{{ homelab_dir }}/server/docker-compose.yml"
+    mode: "0644"
+
+- name: Render shared homelab config.json
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/templates/config.json.j2"
+    dest: "{{ homelab_dir }}/config.json"
+    mode: "0600"
+
+- name: Create HumanitZ config directory
+  ansible.builtin.file:
+    path: "{{ homelab_dir }}/server/volumes/humanityz/HumanitZServer"
+    state: directory
+    mode: "0755"
+
+- name: Configure HumanitZ GameServerSettings.ini (Host Settings)
+  community.general.ini_file:
+    path: "{{ homelab_dir }}/server/volumes/humanityz/HumanitZServer/GameServerSettings.ini"
+    section: Host Settings
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    create: true
+    mode: "0644"
+  loop:
+    - { option: ServerName, value: "HumanitZ [homelab]" }
+    - { option: MaxPlayers, value: "{{ games.humanityz.max_players }}" }
+    - { option: RCONEnabled, value: "true" }
+    - { option: RConPort, value: "{{ games.humanityz.rcon_port }}" }
+    - { option: RCONPass, value: "{{ vault_rcon_pass_humanityz }}" }
+  no_log: true
+
+- name: Create Docker Compose services without starting them
+  ansible.builtin.command:
+    cmd: docker compose -f {{ homelab_dir }}/server/docker-compose.yml up --no-start
+    chdir: "{{ homelab_dir }}/server"
+  changed_when: true

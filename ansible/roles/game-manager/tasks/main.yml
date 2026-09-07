@@ -1,0 +1,27 @@
+---
+- name: Install paho-mqtt
+  ansible.builtin.apt:
+    name: python3-paho-mqtt
+    state: present
+    update_cache: true
+
+- name: Copy game_manager.py
+  ansible.builtin.copy:
+    src: game_manager.py
+    dest: "{{ homelab_dir }}/game_manager.py"
+    mode: "0755"
+  notify: Reload systemd and restart game-manager
+
+- name: Render game-manager systemd unit
+  ansible.builtin.template:
+    src: game-manager.service.j2
+    dest: /etc/systemd/system/homelab-game-manager.service
+    mode: "0644"
+  notify: Reload systemd and restart game-manager
+
+- name: Enable and start game-manager
+  ansible.builtin.systemd:
+    name: homelab-game-manager
+    enabled: true
+    state: started
+    daemon_reload: true

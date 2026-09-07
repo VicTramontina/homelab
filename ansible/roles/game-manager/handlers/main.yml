@@ -1,0 +1,6 @@
+---
+- name: Reload systemd and restart game-manager
+  ansible.builtin.systemd:
+    name: homelab-game-manager
+    daemon_reload: true
+    state: restarted

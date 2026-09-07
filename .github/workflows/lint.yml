@@ -1,0 +1,34 @@
+name: Lint
+
+on:
+  pull_request:
+
+jobs:
+  docker-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        working-directory: server
+        run: docker compose config
+
+  ansible:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Install required collections
+        working-directory: ansible
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Syntax-check playbook
+        working-directory: ansible
+        run: ansible-playbook -i inventory.ini setup-server.yml --syntax-check

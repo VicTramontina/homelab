@@ -1,0 +1,6 @@
+---
+- name: Reload systemd and restart activity-monitor
+  ansible.builtin.systemd:
+    name: homelab-activity-monitor
+    daemon_reload: true
+    state: restarted

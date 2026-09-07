@@ -1,0 +1,17 @@
+---
+# Provisions the physical Ubuntu Server LTS gameserver PC end to end:
+# Docker, the status/activity/backup daemons, and the game containers
+# themselves (defined but never auto-started).
+#
+# Usage:
+#   ansible-galaxy collection install -r requirements.yml
+#   ansible-playbook -i inventory.ini setup-server.yml --ask-vault-pass
+- name: Provision homelab gameserver
+  hosts: gameserver
+  become: true
+  roles:
+    - docker
+    - status-daemon
+    - game-manager
+    - activity-monitor
+    - backup-scheduler

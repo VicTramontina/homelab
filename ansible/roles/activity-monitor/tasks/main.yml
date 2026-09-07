@@ -1,0 +1,27 @@
+---
+- name: Copy shared RCON client module
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/files/rcon_client.py"
+    dest: "{{ homelab_dir }}/rcon_client.py"
+    mode: "0644"
+
+- name: Copy activity_monitor.py
+  ansible.builtin.copy:
+    src: activity_monitor.py
+    dest: "{{ homelab_dir }}/activity_monitor.py"
+    mode: "0755"
+  notify: Reload systemd and restart activity-monitor
+
+- name: Render activity-monitor systemd unit
+  ansible.builtin.template:
+    src: activity-monitor.service.j2
+    dest: /etc/systemd/system/homelab-activity-monitor.service
+    mode: "0644"
+  notify: Reload systemd and restart activity-monitor
+
+- name: Enable and start activity-monitor
+  ansible.builtin.systemd:
+    name: homelab-activity-monitor
+    enabled: true
+    state: started
+    daemon_reload: true

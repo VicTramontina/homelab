@@ -1,0 +1,20 @@
+---
+# Non-secret configuration for the gameserver host. Secrets referenced
+# here (vault_*) live in an ansible-vault-encrypted vault.yml -- see
+# vault.yml.example in this same directory.
+homelab_dir: /opt/homelab
+r2_bucket: homelab-backups
+r2_endpoint: "https://CHANGE_ME_ACCOUNT_ID.r2.cloudflarestorage.com"
+backups_to_keep: 3
+aio_username: your-adafruit-io-username
+
+# One entry per supported game. Adding a new game to the whole project
+# means: add a Docker Compose service, add an entry here, add a
+# vault_rcon_pass_<name> secret, and add a choice in discord-bot/src/commands.js.
+games:
+  humanityz:
+    compose_service: humanityz
+    rcon_host: 127.0.0.1
+    rcon_port: 8888
+    max_players: 16
+    volume_path: "{{ homelab_dir }}/server/volumes/humanityz"

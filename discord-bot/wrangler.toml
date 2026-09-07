@@ -1,0 +1,8 @@
+name = "homelab-discord-bot"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# Secrets (never set here — use `wrangler secret put <name>`):
+#   DISCORD_PUBLIC_KEY  - from the Discord Developer Portal, General Information tab
+#   AIO_USERNAME        - your Adafruit IO username
+#   AIO_KEY             - your Adafruit IO key (Adafruit IO -> My Key)

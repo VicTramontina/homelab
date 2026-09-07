@@ -1,0 +1,28 @@
+# --- Secrets ---
+discord-bot/.dev.vars
+esp32-firmware/include/config.h
+ansible/group_vars/gameserver/vault.yml
+*.env
+.env
+.env.*
+
+# --- Build artifacts ---
+node_modules/
+discord-bot/.wrangler/
+esp32-firmware/.pio/
+
+# --- Runtime data (server volumes / local backups) ---
+server/volumes/*
+!server/volumes/.gitkeep
+server/backups/*
+!server/backups/.gitkeep
+
+# --- Python ---
+__pycache__/
+*.pyc
+
+# --- OS / editor cruft ---
+.DS_Store
+*.swp
+.idea/
+.vscode/

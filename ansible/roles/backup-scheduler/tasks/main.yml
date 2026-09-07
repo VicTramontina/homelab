@@ -1,0 +1,27 @@
+---
+- name: Install rclone and jq
+  ansible.builtin.apt:
+    name:
+      - rclone
+      - jq
+    state: present
+    update_cache: true
+
+- name: Create root rclone config directory
+  ansible.builtin.file:
+    path: /root/.config/rclone
+    state: directory
+    mode: "0700"
+
+- name: Render rclone R2 remote config
+  ansible.builtin.template:
+    src: rclone.conf.j2
+    dest: /root/.config/rclone/rclone.conf
+    mode: "0600"
+  no_log: true
+
+- name: Copy backup.sh
+  ansible.builtin.copy:
+    src: backup.sh
+    dest: "{{ homelab_dir }}/backup.sh"
+    mode: "0755"

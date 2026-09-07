@@ -1,0 +1,14 @@
+[Unit]
+Description=homelab game-manager (executes server-command actions)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 {{ homelab_dir }}/game_manager.py
+Restart=on-failure
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target

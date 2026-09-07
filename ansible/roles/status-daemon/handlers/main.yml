@@ -1,0 +1,6 @@
+---
+- name: Reload systemd and restart status-daemon
+  ansible.builtin.systemd:
+    name: homelab-status-daemon
+    daemon_reload: true
+    state: restarted

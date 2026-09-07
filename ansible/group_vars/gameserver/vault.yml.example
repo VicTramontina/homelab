@@ -1,0 +1,18 @@
+# Template for the encrypted secrets file. DO NOT put real values here --
+# this file is committed as documentation of which keys are expected.
+#
+# Create the real file locally with:
+#   ansible-vault create ansible/group_vars/gameserver/vault.yml
+# (it is gitignored, so it never gets committed)
+#
+# Then paste in real values following this same structure, and run the
+# playbook with --ask-vault-pass or a --vault-password-file.
+
+vault_aio_key: "changeme-adafruit-io-key"
+
+# One vault_rcon_pass_<game> variable per entry in group_vars/gameserver/vars.yml -> games
+vault_rcon_pass_humanityz: "changeme-rcon-password"
+
+# Cloudflare R2 (S3-compatible) credentials for the backup-scheduler role
+vault_r2_access_key_id: "changeme-r2-access-key-id"
+vault_r2_secret_access_key: "changeme-r2-secret-access-key"
