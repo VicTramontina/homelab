@@ -8,7 +8,9 @@ stops. First (and currently only) supported game: **HumanityZ**.
 
 No always-on infrastructure beyond free-tier services -- the Discord bot
 is a Cloudflare Worker (HTTP interactions, not a 24/7 gateway bot), and
-MQTT signaling runs through Adafruit IO's free tier.
+MQTT signaling runs through Adafruit IO's free tier. Friends connect
+through a [playit.gg](https://playit.gg) tunnel, so there's no router
+port forwarding and no VPN required on their end.
 
 See [`docs/architecture.md`](docs/architecture.md) for how the pieces fit
 together (diagram, MQTT schemas, idle-detection/backup rules), and

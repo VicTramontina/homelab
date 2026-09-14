@@ -4,7 +4,7 @@
 # vault.yml.example in this same directory.
 homelab_dir: /opt/homelab
 r2_bucket: homelab-backups
-r2_endpoint: "https://CHANGE_ME_ACCOUNT_ID.r2.cloudflarestorage.com"
+r2_endpoint: "https://0da20363209addd5e807f623ac74e3c2.r2.cloudflarestorage.com"
 backups_to_keep: 3
 aio_username: your-adafruit-io-username
 

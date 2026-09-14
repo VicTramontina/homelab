@@ -25,7 +25,10 @@ Ubuntu Server LTS (headless, off most of the time)
    - activity-monitor:  RCON player counts -> decides idle stop/shutdown
    - game-manager:      executes start/stop/backup/shutdown
    - backup-scheduler:  backup.sh, invoked by game-manager only
+   - playit-agent:      outbound-only tunnel, no router port forwarding
    - Docker Compose:    one service per game, none auto-start
+
+Friends -----> playit.gg relay -----> playit-agent -----> game port (local)
 ```
 
 Why an ESP32 in the loop at all: the gameserver PC is off or asleep most
@@ -91,6 +94,30 @@ status-daemon only runs while the PC is on, so `pc_state` is always
 reported as `"on"`. There is intentionally no daemon publishing `"off"` --
 a machine that's off can't run one. The Worker (or a human reading the
 Discord embed) infers "probably off" from the feed simply going stale.
+
+## Networking: no port forwarding
+
+The PC sits behind a home router the owner doesn't want to touch (no port
+forwarding, no DDNS, no exposing the router's admin panel to figure out
+UPnP quirks), and friends shouldn't need a VPN just to join a game. Both
+constraints are solved by [playit.gg](https://playit.gg): the
+`playit-agent` role installs its Linux agent as a systemd service, which
+makes a single outbound connection to playit's relay network -- the same
+NAT-traversal trick tools like ngrok or Tailscale Funnel use. No inbound
+port ever needs to be opened on the router for this to work.
+
+Tunnels (which local port maps to which public playit.gg address) are
+configured once, by hand, in the playit.gg web dashboard -- not in this
+repo -- because they're tied to the agent's account-level secret key, not
+to anything Ansible manages locally. See `docs/setup.md` for the
+one-time dashboard steps. The agent only needs that secret key, stored
+in Ansible Vault as `vault_playit_secret_key`.
+
+Only the actual game port is tunneled. RCON (8888/tcp) is deliberately
+**never** tunneled -- it's only ever used locally, by status-daemon and
+activity-monitor over `127.0.0.1` -- so `server/docker-compose.yml` binds
+it to loopback only (`127.0.0.1:8888:8888`) rather than exposing it on
+every interface.
 
 ## Supported games
 

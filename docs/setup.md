@@ -37,7 +37,31 @@ next step needs.
    Key**, and your **Account ID** (used to build the S3-compatible
    endpoint: `https://<account_id>.r2.cloudflarestorage.com`).
 
-## 4. ESP32 firmware
+## 4. playit.gg (no port forwarding, no VPN for friends)
+
+This is what lets friends join over the internet without you touching
+your router and without anyone installing a VPN. The `playit-agent`
+Ansible role (step 8) installs an agent on the PC that connects out to
+playit's network; you create the actual tunnel by hand, once, in their
+dashboard.
+
+1. Create a free account at [playit.gg](https://playit.gg).
+2. Go to [playit.gg/account/agents](https://playit.gg/account/agents) and
+   create a new agent (any type works, e.g. "Docker" -- you won't
+   actually run their Docker image, the secret key works the same for
+   the native Linux agent this project installs via Ansible). Copy the
+   **Secret Key**.
+3. You can't create the tunnel itself until the agent has connected at
+   least once, so this part comes back after step 8 (Ansible): once the
+   `playit-agent` role has run and the agent shows as online in the
+   dashboard, go to **Tunnels -> Create Tunnel**, pick UDP, and set the
+   local port to `7777` (HumanityZ's game port; leave the local address
+   as `127.0.0.1`). playit.gg assigns a public address like
+   `something.gl.at.ply.gg:12345` -- that's what you give your friends
+   instead of your home IP. Do not create a tunnel for port `8888`
+   (RCON) -- it's only used locally and is bound to loopback on purpose.
+
+## 5. ESP32 firmware
 
 1. Install [PlatformIO](https://platformio.org/) (VS Code extension or
    CLI).
@@ -46,12 +70,12 @@ next step needs.
    - your 2.4GHz Wi-Fi SSID/password
    - your Adafruit IO username/key
    - the target PC's real MAC address (`TARGET_MAC_ADDR`) -- get it with
-     `ip link show` on the PC (Linux) once Ubuntu is installed (step 6).
+     `ip link show` on the PC (Linux) once Ubuntu is installed (step 7).
 3. Flash it: `pio run -t upload` (with the ESP32 connected via USB).
 4. Open the serial monitor (`pio device monitor`) and confirm it connects
    to Wi-Fi and to Adafruit IO's MQTT broker.
 
-## 5. Cloudflare Worker (Discord bot)
+## 6. Cloudflare Worker (Discord bot)
 
 1. `cd discord-bot && npm install`.
 2. Authenticate wrangler: `npx wrangler login`.
@@ -73,7 +97,7 @@ next step needs.
    ```
    Global commands can take up to an hour to show up the first time.
 
-## 6. Ubuntu Server LTS on the physical PC
+## 7. Ubuntu Server LTS on the physical PC
 
 1. Install [Ubuntu Server LTS](https://ubuntu.com/download/server)
    (headless is fine) on the old PC. During install, create a user with
@@ -93,12 +117,12 @@ next step needs.
      sudo ethtool -s <interface> wol g
      ```
    - Note the interface's MAC address (`ip link show <interface>`) -- this
-     is the `TARGET_MAC_ADDR` used in the ESP32 config (step 4).
+     is the `TARGET_MAC_ADDR` used in the ESP32 config (step 5).
 3. Make sure the PC is on the same LAN segment/broadcast domain as the
    ESP32 (Wake-on-LAN magic packets are broadcast and don't cross
    routers/VLANs without extra config).
 
-## 7. Ansible
+## 8. Ansible
 
 Run this from any machine with SSH access to the Ubuntu server (your
 laptop, or the server itself against `localhost`).
@@ -108,24 +132,28 @@ laptop, or the server itself against `localhost`).
    server.
 3. Edit `group_vars/gameserver/vars.yml`: set `aio_username`, `r2_bucket`,
    `r2_endpoint` (from step 3) to your real values.
-4. Create the real vault file (values from steps 1 and 3, plus a RCON
+4. Create the real vault file (values from steps 1, 3, and 4, plus a RCON
    password you choose yourself):
    ```
    ansible-vault create group_vars/gameserver/vault.yml
    ```
    Fill it in following the structure documented in
-   `group_vars/gameserver/vault.yml.example`.
+   `group_vars/gameserver/vault.yml.example` (includes
+   `vault_playit_secret_key` from step 4).
 5. Run the playbook:
    ```
    ansible-playbook -i inventory.ini setup-server.yml --ask-vault-pass
    ```
    This installs Docker, creates the HumanityZ container (without
    starting it), writes `GameServerSettings.ini` with your chosen RCON
-   password, and installs/enables the three systemd services
-   (`homelab-status-daemon`, `homelab-game-manager`,
-   `homelab-activity-monitor`) plus `backup.sh`/rclone.
+   password, installs and starts the `playit` agent, and installs/enables
+   the three systemd services (`homelab-status-daemon`,
+   `homelab-game-manager`, `homelab-activity-monitor`) plus
+   `backup.sh`/rclone.
+6. Back in the playit.gg dashboard, the agent should now show as online
+   -- finish step 4.3 (create the tunnel) if you haven't yet.
 
-## 8. GitHub Actions secrets
+## 9. GitHub Actions secrets
 
 In the repo's Settings -> Secrets and variables -> Actions, add:
 
@@ -135,7 +163,7 @@ In the repo's Settings -> Secrets and variables -> Actions, add:
   template "Edit Cloudflare Workers"). Used by `deploy-worker.yml` to run
   `wrangler deploy` on every push to `discord-bot/**`.
 
-## 9. Try it end to end
+## 10. Try it end to end
 
 1. Shut the PC down (`sudo shutdown -h now` on the server, or just unplug
    the WoL test on an already-off machine).
@@ -153,3 +181,6 @@ In the repo's Settings -> Secrets and variables -> Actions, add:
    and shuts the PC down.
 6. Check the R2 bucket -- you should see up to 3 timestamped
    `humanityz-<timestamp>.tar.gz` archives under a `humanityz/` prefix.
+7. Have a friend connect using the playit.gg address from step 4.3
+   (`something.gl.at.ply.gg:PORT`), not your home IP -- that's the whole
+   point of the tunnel, nobody needs a VPN or your router touched.

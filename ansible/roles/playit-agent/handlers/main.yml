@@ -1,0 +1,5 @@
+---
+- name: Restart playit
+  ansible.builtin.systemd:
+    name: playit
+    state: restarted

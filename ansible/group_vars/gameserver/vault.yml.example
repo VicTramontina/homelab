@@ -16,3 +16,10 @@ vault_rcon_pass_humanityz: "changeme-rcon-password"
 # Cloudflare R2 (S3-compatible) credentials for the backup-scheduler role
 vault_r2_access_key_id: "changeme-r2-access-key-id"
 vault_r2_secret_access_key: "changeme-r2-secret-access-key"
+
+# playit.gg agent secret key (playit-agent role) -- lets friends join
+# without VPN or router port forwarding. Get it from playit.gg: create an
+# account, create an agent (any type, e.g. "Docker"), and copy its Secret
+# Key from https://playit.gg/account/agents -- no need to actually run
+# Docker, the key works the same for the native Linux agent.
+vault_playit_secret_key: "changeme-playit-secret-key"

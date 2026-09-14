@@ -1,0 +1,55 @@
+---
+# Installs the playit.gg agent so friends can join the game server without
+# VPN and without any port forwarding on the home router: the agent makes
+# an outbound-only connection to playit's relay network, which is enough
+# to tunnel inbound UDP/TCP traffic to the game port. Tunnels themselves
+# (which local port maps to which public playit.gg address) are managed
+# from the playit.gg web dashboard, not from anything in this repo -- the
+# agent only needs the account secret key to authenticate.
+#
+# RCON (8888/tcp) is intentionally never tunneled here -- only the
+# server's own daemons use it, over 127.0.0.1. See server/docker-compose.yml.
+- name: Install gnupg (needed to dearmor the playit apt key)
+  ansible.builtin.apt:
+    name: gnupg
+    state: present
+    update_cache: true
+
+- name: Download playit.gg apt signing key
+  ansible.builtin.get_url:
+    url: https://playit-cloud.github.io/ppa/key.gpg
+    dest: /tmp/playit-key.gpg
+    mode: "0644"
+
+- name: Dearmor playit.gg apt signing key
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /etc/apt/trusted.gpg.d/playit.gpg /tmp/playit-key.gpg
+    creates: /etc/apt/trusted.gpg.d/playit.gpg
+
+- name: Add playit.gg apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/playit-cloud.list
+    content: "deb [signed-by=/etc/apt/trusted.gpg.d/playit.gpg] https://playit-cloud.github.io/ppa/data ./\n"
+    mode: "0644"
+
+- name: Install playit agent
+  ansible.builtin.apt:
+    name: playit
+    state: present
+    update_cache: true
+
+- name: Write playit secret key
+  ansible.builtin.template:
+    src: playit.toml.j2
+    dest: /etc/playit/playit.toml
+    owner: playit
+    group: playit
+    mode: "0600"
+  no_log: true
+  notify: Restart playit
+
+- name: Enable and start playit
+  ansible.builtin.systemd:
+    name: playit
+    enabled: true
+    state: started
