@@ -1,0 +1,54 @@
+---
+# Installs the Claude Code CLI on the gameserver box via Anthropic's
+# official apt repository (stable channel), so updates go through the
+# normal `apt upgrade` workflow instead of the native installer's
+# background auto-update. This only installs the tool -- authentication
+# (`claude` -> follow the browser login prompt, or set ANTHROPIC_API_KEY)
+# is a manual one-time step documented in docs/setup.md, since it can't
+# be done non-interactively without a credential only the owner has.
+- name: Install curl and gnupg (needed for the apt repo signing key)
+  ansible.builtin.apt:
+    name:
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download Claude Code apt signing key
+  ansible.builtin.get_url:
+    url: https://downloads.claude.ai/keys/claude-code.asc
+    dest: /etc/apt/keyrings/claude-code.asc
+    mode: "0644"
+
+- name: Verify Claude Code apt signing key fingerprint
+  ansible.builtin.command:
+    cmd: gpg --show-keys /etc/apt/keyrings/claude-code.asc
+  register: claude_code_key_check
+  changed_when: false
+
+- name: Assert the signing key fingerprint matches Anthropic's published value
+  ansible.builtin.assert:
+    that: "'31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE' in (claude_code_key_check.stdout | replace(' ', ''))"
+    fail_msg: >-
+      Downloaded Claude Code apt signing key fingerprint does not match the
+      expected value (31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE).
+      Refusing to trust an unverified key -- check network/DNS for
+      tampering before retrying.
+
+- name: Add Claude Code apt repository (stable channel)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/claude-code.list
+    content: "deb [signed-by=/etc/apt/keyrings/claude-code.asc] https://downloads.claude.ai/claude-code/apt/stable stable main\n"
+    mode: "0644"
+
+- name: Install Claude Code
+  ansible.builtin.apt:
+    name: claude-code
+    state: present
+    update_cache: true

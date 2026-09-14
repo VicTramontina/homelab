@@ -146,12 +146,16 @@ laptop, or the server itself against `localhost`).
    ```
    This installs Docker, creates the HumanityZ container (without
    starting it), writes `GameServerSettings.ini` with your chosen RCON
-   password, installs and starts the `playit` agent, and installs/enables
-   the three systemd services (`homelab-status-daemon`,
-   `homelab-game-manager`, `homelab-activity-monitor`) plus
-   `backup.sh`/rclone.
+   password, installs and starts the `playit` agent, installs the
+   Claude Code CLI, and installs/enables the three systemd services
+   (`homelab-status-daemon`, `homelab-game-manager`,
+   `homelab-activity-monitor`) plus `backup.sh`/rclone.
 6. Back in the playit.gg dashboard, the agent should now show as online
    -- finish step 4.3 (create the tunnel) if you haven't yet.
+7. Claude Code is installed but not authenticated (Ansible can't do that
+   part -- it needs your own Claude account, not a vault secret). SSH in
+   and run `claude`, then follow the browser login prompt; or set an
+   `ANTHROPIC_API_KEY` if you'd rather authenticate non-interactively.
 
 ## 9. GitHub Actions secrets
 

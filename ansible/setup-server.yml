@@ -11,6 +11,7 @@
   become: true
   roles:
     - docker
+    - claude-code
     - playit-agent
     - status-daemon
     - game-manager
