@@ -19,6 +19,16 @@
 # game port through the playit.gg tunnel (see the `playit-agent` Ansible
 # role and docs/setup.md). RCON is never tunneled, only used locally by
 # this project's own daemons, so its port is bound to loopback only.
+#
+# The `logging` block below caps each container's log file (Docker's
+# default json-file driver has NO size limit otherwise -- a long game
+# session would otherwise let console output grow the disk unbounded).
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   humanityz:
     image: indifferentbroccoli/humanitz-server-docker:latest
@@ -26,6 +36,7 @@ services:
     container_name: humanityz
     restart: "no"
     stop_grace_period: 30s
+    logging: *default-logging
     environment:
       PUID: "1000"
       PGID: "1000"
