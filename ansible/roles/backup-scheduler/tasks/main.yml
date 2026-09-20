@@ -1,11 +1,18 @@
 ---
-- name: Install rclone and jq
+- name: Install jq
   ansible.builtin.apt:
-    name:
-      - rclone
-      - jq
+    name: jq
     state: present
     update_cache: true
+
+# Ubuntu's apt package for rclone lags upstream by years (v1.60 vs
+# current v1.75+ as of writing), which caused confusing, hard-to-debug
+# R2 upload failures -- install via rclone's own official script
+# instead, matching what upstream recommends.
+- name: Install/update rclone via the official install script
+  ansible.builtin.shell: curl -fsSL https://rclone.org/install.sh | bash
+  register: rclone_install
+  changed_when: "'successfully installed' in rclone_install.stdout"
 
 - name: Create root rclone config directory
   ansible.builtin.file:
