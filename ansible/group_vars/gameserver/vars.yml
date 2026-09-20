@@ -6,7 +6,7 @@ homelab_dir: /opt/homelab
 r2_bucket: homelab-backups
 r2_endpoint: "https://0da20363209addd5e807f623ac74e3c2.r2.cloudflarestorage.com"
 backups_to_keep: 3
-aio_username: your-adafruit-io-username
+aio_username: victortramontina
 
 # One entry per supported game. Adding a new game to the whole project
 # means: add a Docker Compose service, add an entry here, add a
