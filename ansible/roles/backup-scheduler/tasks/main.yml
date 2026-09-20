@@ -13,6 +13,7 @@
   ansible.builtin.shell: curl -fsSL https://rclone.org/install.sh | bash
   register: rclone_install
   changed_when: "'successfully installed' in rclone_install.stdout"
+  failed_when: rclone_install.rc != 0 and 'already installed' not in rclone_install.stdout
 
 - name: Create root rclone config directory
   ansible.builtin.file:
