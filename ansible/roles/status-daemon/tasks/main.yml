@@ -4,6 +4,7 @@
     src: "{{ playbook_dir }}/files/rcon_client.py"
     dest: "{{ homelab_dir }}/rcon_client.py"
     mode: "0644"
+  notify: Reload systemd and restart status-daemon
 
 - name: Copy status_daemon.py
   ansible.builtin.copy:

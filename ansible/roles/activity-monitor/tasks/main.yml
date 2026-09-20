@@ -4,6 +4,7 @@
     src: "{{ playbook_dir }}/files/rcon_client.py"
     dest: "{{ homelab_dir }}/rcon_client.py"
     mode: "0644"
+  notify: Reload systemd and restart activity-monitor
 
 - name: Copy activity_monitor.py
   ansible.builtin.copy:
