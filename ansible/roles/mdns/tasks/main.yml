@@ -1,0 +1,16 @@
+---
+# Advertises this host on the local network via mDNS (Bonjour/Zeroconf),
+# so it's reachable at <hostname>.local regardless of which IP a router
+# hands out -- this keeps working across router changes/DHCP lease
+# changes, unlike a static IP or a DHCP reservation tied to one router.
+- name: Install avahi-daemon
+  ansible.builtin.apt:
+    name: avahi-daemon
+    state: present
+    update_cache: true
+
+- name: Enable and start avahi-daemon
+  ansible.builtin.systemd:
+    name: avahi-daemon
+    enabled: true
+    state: started

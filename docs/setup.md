@@ -128,8 +128,13 @@ Run this from any machine with SSH access to the Ubuntu server (your
 laptop, or the server itself against `localhost`).
 
 1. `cd ansible && ansible-galaxy collection install -r requirements.yml`.
-2. Edit `inventory.ini` with the real IP/hostname and SSH user for the
-   server.
+2. Edit `inventory.ini` with the server's **current IP** (check with
+   `hostname -I` on the server itself) and SSH user. The playbook
+   installs mDNS (`avahi-daemon`) on this same run, so *after* it
+   finishes once, switch `ansible_host` to `<hostname>.local` (e.g.
+   `bigaserver.local` -- check the server's hostname with `hostname`) --
+   that keeps working even if you change routers or the DHCP lease
+   changes, unlike a hardcoded IP.
 3. Edit `group_vars/gameserver/vars.yml`: set `aio_username`, `r2_bucket`,
    `r2_endpoint` (from step 3) to your real values.
 4. Create the real vault file (values from steps 1, 3, and 4, plus a RCON
@@ -144,11 +149,12 @@ laptop, or the server itself against `localhost`).
    ```
    ansible-playbook -i inventory.ini setup-server.yml --ask-vault-pass
    ```
-   This installs Docker, creates the HumanityZ container (without
-   starting it), writes `GameServerSettings.ini` with your chosen RCON
-   password, installs and starts the `playit` agent, installs the
-   Claude Code CLI, and installs/enables the three systemd services
-   (`homelab-status-daemon`, `homelab-game-manager`,
+   This installs mDNS (`avahi-daemon`, so the server is reachable at
+   `<hostname>.local` from here on), Docker, creates the HumanityZ
+   container (without starting it), writes `GameServerSettings.ini`
+   with your chosen RCON password, installs and starts the `playit`
+   agent, installs the Claude Code CLI, and installs/enables the three
+   systemd services (`homelab-status-daemon`, `homelab-game-manager`,
    `homelab-activity-monitor`) plus `backup.sh`/rclone.
 6. Back in the playit.gg dashboard, the agent should now show as online
    -- finish step 4.3 (create the tunnel) if you haven't yet.
