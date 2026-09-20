@@ -42,8 +42,19 @@ class RconClient:
         self._sock = socket.create_connection((self.host, self.port), timeout=self.timeout)
         self._sock.settimeout(self.timeout)
         auth_id = self._send(SERVERDATA_AUTH, self.password)
-        _, resp_id, _ = self._recv_packet()
-        if resp_id != auth_id:
+        # Some servers (e.g. HumanitZ) send an extra, empty
+        # SERVERDATA_RESPONSE_VALUE packet before the real
+        # SERVERDATA_AUTH_RESPONSE -- keep reading until we see the actual
+        # auth response type instead of assuming it's the very first packet,
+        # otherwise that extra packet is left unread and desyncs every
+        # subsequent command/response pairing.
+        pkt_type = None
+        resp_id = None
+        for _ in range(4):
+            pkt_type, resp_id, _ = self._recv_packet()
+            if pkt_type == SERVERDATA_AUTH_RESPONSE:
+                break
+        if pkt_type != SERVERDATA_AUTH_RESPONSE or resp_id != auth_id:
             self.close()
             raise RconError(f"RCON authentication failed for {self.host}:{self.port}")
 
@@ -55,10 +66,14 @@ class RconClient:
     def command(self, text: str) -> str:
         if self._sock is None:
             raise RconError("RCON client is not connected")
-        sent_id = self._send(SERVERDATA_EXECCOMMAND, text)
-        _, resp_id, body = self._recv_packet()
-        if resp_id != sent_id:
-            raise RconError("RCON response id mismatch")
+        self._send(SERVERDATA_EXECCOMMAND, text)
+        # Not all servers echo the request id back correctly on command
+        # responses (HumanitZ always responds with id 0, regardless of what
+        # was sent) -- since we only ever send one command at a time and
+        # wait for its reply before sending the next, the next packet off
+        # the wire is reliably the response we want even without an id
+        # match.
+        _, _, body = self._recv_packet()
         return body
 
     def _send(self, pkt_type: int, body: str) -> int:
