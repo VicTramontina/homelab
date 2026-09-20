@@ -1,0 +1,34 @@
+---
+# The "Wake-on-LAN" BIOS setting alone isn't enough -- the NIC driver
+# also needs `wol g` set at the OS level (ethtool), and that setting
+# resets on every reboot by default. Since this whole project depends
+# on the PC reliably waking from a real power-off, this needs to be
+# reapplied automatically on every boot, not set once by hand.
+- name: Install ethtool
+  ansible.builtin.apt:
+    name: ethtool
+    state: present
+    update_cache: true
+
+- name: Determine default network interface
+  ansible.builtin.shell: ip route show default | awk '{print $5; exit}'
+  register: default_iface
+  changed_when: false
+
+- name: Enable Wake-on-LAN now
+  ansible.builtin.command: ethtool -s {{ default_iface.stdout }} wol g
+  changed_when: true
+
+- name: Create systemd unit to re-enable Wake-on-LAN on every boot
+  ansible.builtin.template:
+    src: homelab-wol.service.j2
+    dest: /etc/systemd/system/homelab-wol.service
+    mode: "0644"
+  notify: Reload systemd and restart homelab-wol
+
+- name: Enable and start the Wake-on-LAN persistence service
+  ansible.builtin.systemd:
+    name: homelab-wol
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -11,6 +11,7 @@
   become: true
   roles:
     - mdns
+    - wol-persist
     - docker
     - claude-code
     - playit-agent

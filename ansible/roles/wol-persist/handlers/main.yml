@@ -1,0 +1,6 @@
+---
+- name: Reload systemd and restart homelab-wol
+  ansible.builtin.systemd:
+    name: homelab-wol
+    daemon_reload: true
+    state: restarted

@@ -1,0 +1,12 @@
+[Unit]
+Description=homelab Wake-on-LAN enabler (ethtool wol g)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/ethtool -s {{ default_iface.stdout }} wol g
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
