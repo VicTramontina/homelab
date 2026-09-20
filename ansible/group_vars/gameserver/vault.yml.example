@@ -11,7 +11,14 @@
 vault_aio_key: "changeme-adafruit-io-key"
 
 # One vault_rcon_pass_<game> variable per entry in group_vars/gameserver/vars.yml -> games
+# (RCON is admin-only, used by our own daemons -- not what players type to join)
 vault_rcon_pass_humanityz: "changeme-rcon-password"
+
+# One vault_join_pass_<game> variable per entry in vars.yml -> games -- this
+# IS what players type in-game to connect. Optional in principle, but the
+# server has no port forwarding to begin with, so treat it as a basic filter
+# against randoms who stumble onto the playit.gg address, not real security.
+vault_join_pass_humanityz: "changeme-join-password"
 
 # Cloudflare R2 (S3-compatible) credentials for the backup-scheduler role
 vault_r2_access_key_id: "changeme-r2-access-key-id"

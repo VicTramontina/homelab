@@ -111,6 +111,7 @@
     - { option: RCONEnabled, value: "true" }
     - { option: RConPort, value: "{{ games.humanityz.rcon_port }}" }
     - { option: RCONPass, value: "{{ vault_rcon_pass_humanityz }}" }
+    - { option: Password, value: "{{ vault_join_pass_humanityz }}" }
   no_log: true
 
 - name: Create Docker Compose services without starting them
