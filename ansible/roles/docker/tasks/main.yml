@@ -5,6 +5,7 @@
       - ca-certificates
       - curl
       - gnupg
+      - lsb-release
     state: present
     update_cache: true
 
@@ -20,9 +21,19 @@
     dest: /etc/apt/keyrings/docker.asc
     mode: "0644"
 
+- name: Determine dpkg architecture
+  ansible.builtin.command: dpkg --print-architecture
+  register: dpkg_arch
+  changed_when: false
+
+- name: Determine distribution codename
+  ansible.builtin.command: lsb_release -cs
+  register: distro_codename
+  changed_when: false
+
 - name: Add Docker apt repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{ ansible_facts['deb_architecture'] }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable"
+    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ distro_codename.stdout }} stable"
     state: present
     filename: docker
 
