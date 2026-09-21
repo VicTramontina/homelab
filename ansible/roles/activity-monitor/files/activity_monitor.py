@@ -18,7 +18,8 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, "/opt/homelab")
-from rcon_client import RconError, get_player_count  # noqa: E402
+from game_adapters import get_player_count  # noqa: E402
+from rcon_client import RconError  # noqa: E402
 
 CONFIG_PATH = "/opt/homelab/config.json"
 STATE_PATH = "/opt/homelab/activity_state.json"
@@ -30,14 +31,6 @@ PC_IDLE_TIMEOUT = timedelta(minutes=10)
 def load_config() -> dict:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
-
-
-def load_state() -> dict:
-    try:
-        with open(STATE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"last_seen_with_players": {}, "all_stopped_since": None}
 
 
 def save_state(state: dict) -> None:
@@ -98,7 +91,9 @@ def check_games(config: dict, state: dict) -> list[str]:
 
         still_running.append(name)
         try:
-            players = get_player_count(game["rcon_host"], game["rcon_port"], game["rcon_pass"])
+            players = get_player_count(
+                game["rcon_host"], game["rcon_port"], game["rcon_pass"], game["game_type"]
+            )
         except (RconError, OSError) as exc:
             print(f"activity-monitor: RCON query failed for {name}, skipping this pass: {exc}", file=sys.stderr)
             continue
@@ -133,7 +128,15 @@ def check_pc(config: dict, state: dict, still_running: list[str]) -> None:
 
 def main() -> None:
     config = load_config()
-    state = load_state()
+    # Always start with a clean idle-clock instead of trusting whatever was
+    # last written to STATE_PATH: this process only runs while the PC is
+    # on, so a persisted "since" timestamp always predates this boot --
+    # trusting it would make a freshly-booted PC see its own idle window as
+    # already expired and immediately fire stop_game/shutdown_pc before
+    # anything gets a fair chance to run. Still written to STATE_PATH
+    # during operation (see save_state) so it's inspectable and survives a
+    # same-boot crash-restart, just never trusted across a reboot.
+    state = {"last_seen_with_players": {}, "all_stopped_since": None}
 
     while True:
         try:

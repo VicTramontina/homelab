@@ -5,11 +5,16 @@ This is the only component that actually changes state on the PC:
 starting/stopping game containers, running backups, and shutting the
 machine down. The ESP32 only wakes the PC; this script does the rest.
 
-Adafruit IO feeds are retained, so subscribing always delivers the last
-published value immediately (even if it was published while this PC was
-still off). last_processed_command.json keeps track of the timestamp of
-the last command we actually acted on, so a service restart doesn't
-re-run an old command every time.
+Adafruit IO does NOT implement real MQTT retain (it doesn't store data in
+the broker) -- a plain subscribe does NOT deliver the last published
+value. Instead, per their MQTT API docs, a client has to publish an
+empty message to "<topic>/get" right after subscribing, and Adafruit IO
+replies with the current value just for that client. That's the only way
+this process -- which doesn't exist until the PC it runs on has already
+booted -- can catch a command that was published while the PC was still
+off, which is the main way this project gets used. last_processed_command.json
+keeps track of the timestamp of the last command we actually acted on,
+so a service restart doesn't re-run an old command every time.
 """
 import json
 import ssl
@@ -177,6 +182,11 @@ def on_connect(client: mqtt.Client, userdata: dict, flags, reason_code, properti
     topic = f"{userdata['config']['aio_username']}/feeds/server-command"
     print(f"game-manager: connected, subscribing to {topic}")
     client.subscribe(topic)
+    # Adafruit IO has no real MQTT retain -- ask it to resend the current
+    # value just for us (see module docstring). Without this, a command
+    # published while the PC was off is silently missed forever: this
+    # process doesn't exist to receive it live, and nothing else re-sends it.
+    client.publish(f"{topic}/get", payload="")
 
 
 def on_message(client: mqtt.Client, userdata: dict, msg: mqtt.MQTTMessage) -> None:
