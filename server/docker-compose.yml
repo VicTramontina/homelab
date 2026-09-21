@@ -15,10 +15,25 @@
 # Ansible `docker` role manages via community.general.ini_file (RCONPass
 # sourced from Ansible Vault). See docs/architecture.md.
 #
+# cs2, by contrast, IS fully env-var configured (its image regenerates
+# any on-disk config from env vars on every start, so a pre-written file
+# would just be overwritten). Since this file is committed to git as
+# plain text, its secrets (RCON password, join password, GSLT) can't live
+# directly in an `environment:` block here -- it loads a `<name>.env`
+# file instead, rendered by Ansible from Vault into server/<name>.env
+# (gitignored by the repo's blanket `*.env` rule) by
+# roles/docker/tasks/games/<game_type>.yml. See docs/architecture.md.
+#
 # There is no port forwarding on the home router -- players reach the
 # game port through the playit.gg tunnel (see the `playit-agent` Ansible
 # role and docs/setup.md). RCON is never tunneled, only used locally by
-# this project's own daemons, so its port is bound to loopback only.
+# this project's own daemons, so its port is bound to loopback only. CS2
+# is the one exception worth calling out: its dedicated server only
+# speaks RCON on the main game port unless CS2_RCON_PORT is set, so this
+# config sets it to move RCON off the publicly-tunneled port entirely
+# (see cs2.env.j2) -- otherwise the RCON port itself would be internet-
+# reachable behind just a password, not loopback-only like every other
+# game here.
 #
 # The `logging` block below caps each container's log file (Docker's
 # default json-file driver has NO size limit otherwise -- a long game
@@ -49,3 +64,20 @@ services:
       - "127.0.0.1:8888:8888/tcp" # RCON, loopback-only, never tunneled
     volumes:
       - ./volumes/humanityz:/home/steam/server-files
+
+  cs2:
+    image: joedwards32/cs2:latest
+    container_name: cs2
+    restart: "no"
+    stop_grace_period: 30s
+    logging: *default-logging
+    stdin_open: true # matches upstream's own compose example
+    tty: true
+    env_file:
+      - ./cs2.env # server name/map, RCON+join secrets, GSLT -- see games/cs2.yml
+    ports:
+      - "27015:27015/tcp"
+      - "27015:27015/udp"
+      - "127.0.0.1:27016:27016/tcp" # RCON (CS2_RCON_PORT), loopback-only, never tunneled
+    volumes:
+      - ./volumes/cs2:/home/steam/cs2-dedicated

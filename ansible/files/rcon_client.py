@@ -5,6 +5,11 @@ implement the same wire protocol as Valve's Source RCON
 (https://developer.valvesoftware.com/wiki/Source_RCON_Protocol), so a
 small hand-rolled client is enough -- no external dependency needed.
 
+This module is protocol-only and has no per-game knowledge (no "list
+players" command, no response parsing) -- that lives in game_adapters/,
+one module per game_type, since the wire protocol is shared but the
+player-listing command and response shape are not.
+
 Shared by the status-daemon and activity-monitor roles.
 """
 from __future__ import annotations
@@ -103,21 +108,3 @@ class RconClient:
                 raise RconError("RCON connection closed unexpectedly")
             data += chunk
         return data
-
-
-def get_player_count(host: str, port: int, password: str, timeout: float = 5.0) -> int:
-    """Query the HumanityZ "Players" RCON command and return the count.
-
-    HumanityZ's Players command returns a human-readable list (one player
-    per line, or an empty/"No players" style response when empty), so we
-    count non-empty lines rather than parsing a structured format.
-    """
-    with RconClient(host, port, password, timeout=timeout) as client:
-        response = client.command("Players")
-
-    lines = [line.strip() for line in response.splitlines() if line.strip()]
-    if not lines:
-        return 0
-    if len(lines) == 1 and "no player" in lines[0].lower():
-        return 0
-    return len(lines)

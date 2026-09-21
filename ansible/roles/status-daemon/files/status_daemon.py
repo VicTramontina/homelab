@@ -17,7 +17,8 @@ import urllib.error
 import urllib.request
 
 sys.path.insert(0, "/opt/homelab")
-from rcon_client import RconError, get_player_count  # noqa: E402
+from game_adapters import get_player_count  # noqa: E402
+from rcon_client import RconError  # noqa: E402
 
 CONFIG_PATH = "/opt/homelab/config.json"
 POLL_INTERVAL_SECONDS = 90
@@ -54,7 +55,9 @@ def build_status(config: dict) -> dict:
         players = 0
         if running:
             try:
-                players = get_player_count(game["rcon_host"], game["rcon_port"], game["rcon_pass"])
+                players = get_player_count(
+                    game["rcon_host"], game["rcon_port"], game["rcon_pass"], game["game_type"]
+                )
             except (RconError, OSError) as exc:
                 print(f"status-daemon: RCON query failed for {name}: {exc}", file=sys.stderr)
         games[name] = {

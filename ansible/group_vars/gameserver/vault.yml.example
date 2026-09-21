@@ -13,12 +13,22 @@ vault_aio_key: "changeme-adafruit-io-key"
 # One vault_rcon_pass_<game> variable per entry in group_vars/gameserver/vars.yml -> games
 # (RCON is admin-only, used by our own daemons -- not what players type to join)
 vault_rcon_pass_humanityz: "changeme-rcon-password"
+vault_rcon_pass_cs2: "changeme-rcon-password"
 
 # One vault_join_pass_<game> variable per entry in vars.yml -> games -- this
 # IS what players type in-game to connect. Optional in principle, but the
 # server has no port forwarding to begin with, so treat it as a basic filter
 # against randoms who stumble onto the playit.gg address, not real security.
 vault_join_pass_humanityz: "changeme-join-password"
+vault_join_pass_cs2: "changeme-join-password"
+
+# CS2's Steam Game Server Login Token (GSLT) -- get one from
+# https://steamcommunity.com/dev/managegameservers ("any IP" is fine since
+# the playit.gg address isn't known in advance). Required for the server
+# to be VAC-secure and show up in the server browser; friends who already
+# know the playit.gg address can still direct-connect without one, so
+# leave this unset if you don't want to register a token.
+vault_gslt_cs2: "changeme-gslt-token"
 
 # Cloudflare R2 (S3-compatible) credentials for the backup-scheduler role
 vault_r2_access_key_id: "changeme-r2-access-key-id"

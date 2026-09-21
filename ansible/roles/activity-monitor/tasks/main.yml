@@ -6,6 +6,14 @@
     mode: "0644"
   notify: Reload systemd and restart activity-monitor
 
+- name: Copy per-game player-count adapters
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/files/game_adapters/"
+    dest: "{{ homelab_dir }}/game_adapters/"
+    mode: "0644"
+    directory_mode: "0755"
+  notify: Reload systemd and restart activity-monitor
+
 - name: Copy activity_monitor.py
   ansible.builtin.copy:
     src: activity_monitor.py

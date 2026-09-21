@@ -121,14 +121,44 @@ every interface.
 
 ## Supported games
 
-| Game       | Compose service | Game port(s)         | RCON port | Idle-stop threshold |
-|------------|------------------|-----------------------|-----------|----------------------|
-| HumanityZ  | `humanityz`      | 7777/udp, 27015/udp   | 8888/tcp  | 15 min, 0 players    |
+| Game       | Game type   | Compose service | Game port(s)         | RCON port          | Idle-stop threshold |
+|------------|-------------|------------------|-----------------------|---------------------|----------------------|
+| HumanityZ  | `humanityz` | `humanityz`      | 7777/udp, 27015/udp   | 8888/tcp            | 15 min, 0 players    |
+| CS2        | `cs2`       | `cs2`            | 27015/tcp+udp         | 27016/tcp (CS2_RCON_PORT) | 15 min, 0 humans (bots don't count) |
 
 Adding a game means: a new Docker Compose service, a new entry in
-`ansible/group_vars/gameserver/vars.yml` (`games.<name>`), a new
-`vault_rcon_pass_<name>` secret, and a new choice in
-`discord-bot/src/commands.js`. No branching logic needs to be rewritten.
+`ansible/group_vars/gameserver/vars.yml` (`games.<name>`, including a
+`game_type`), a new `vault_rcon_pass_<name>` secret, and a new choice in
+`discord-bot/src/commands.js`. None of `game-manager`, `status-daemon`,
+`activity-monitor` or `backup.sh` need any changes -- they're all driven
+generically by `config.json`.
+
+The one thing that *is* genuinely per-game, because different server
+software disagrees on both its config file format and its RCON dialect,
+is `game_type`. It selects two small "adapter" files:
+
+- `ansible/roles/docker/tasks/games/<game_type>.yml` -- generates that
+  game's on-disk server config (whatever format it expects: `.ini`,
+  `.yaml`, env file...). Included by `roles/docker/tasks/main.yml` for
+  every `games.<name>` entry, keyed by its `game_type`.
+- `ansible/files/game_adapters/<game_type>.py` -- knows the RCON command
+  to list players and how to parse the response, behind one function:
+  `get_player_count(client) -> int`. Registered in
+  `ansible/files/game_adapters/__init__.py`. `rcon_client.py` itself only
+  implements the shared Source RCON wire protocol and has no per-game
+  knowledge.
+
+CS2 illustrates the "env file" flavor of the first adapter: its image
+regenerates any on-disk config from env vars on every start, so instead
+of templating a mounted config file (HumanitZ's approach), `games/cs2.yml`
+renders a `server/<name>.env` file (gitignored -- see
+`server/docker-compose.yml`'s comment) that the compose service loads via
+`env_file:`. That's what keeps its secrets (RCON password, join password,
+GSLT) out of the git-committed compose file.
+
+Reuse an existing `game_type` (e.g. a modded variant of the same server
+software) if both dialects match; otherwise add one new pair of adapter
+files -- everything else stays generic.
 
 ## Why backups only happen before stop/shutdown
 

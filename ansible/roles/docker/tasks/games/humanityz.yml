@@ -1,0 +1,27 @@
+---
+# Config-file generation for game_type "humanityz". Included by
+# tasks/main.yml's per-game loop for any games.<name> entry with
+# game_type: humanityz. Vars available: `game_name` (the games.<name>
+# key) and `game` (that entry's value).
+- name: "[{{ game_name }}] Create HumanitZ config directory"
+  ansible.builtin.file:
+    path: "{{ game.volume_path }}/HumanitZServer"
+    state: directory
+    mode: "0755"
+
+- name: "[{{ game_name }}] Configure HumanitZ GameServerSettings.ini (Host Settings)"
+  community.general.ini_file:
+    path: "{{ game.volume_path }}/HumanitZServer/GameServerSettings.ini"
+    section: Host Settings
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    create: true
+    mode: "0644"
+  loop:
+    - { option: ServerName, value: "{{ game.label | default(game_name) }} [homelab]" }
+    - { option: MaxPlayers, value: "{{ game.max_players }}" }
+    - { option: RCONEnabled, value: "true" }
+    - { option: RConPort, value: "{{ game.rcon_port }}" }
+    - { option: RCONPass, value: "{{ vars['vault_rcon_pass_' + game_name] }}" }
+    - { option: Password, value: "{{ vars['vault_join_pass_' + game_name] | default('') }}" }
+  no_log: true

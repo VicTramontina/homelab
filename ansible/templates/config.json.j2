@@ -10,6 +10,7 @@
 {% for name, game in games.items() %}
     "{{ name }}": {
       "label": "{{ game.label | default(name) }}",
+      "game_type": "{{ game.game_type }}",
       "compose_service": "{{ game.compose_service }}",
       "rcon_host": "{{ game.rcon_host }}",
       "rcon_port": {{ game.rcon_port }},

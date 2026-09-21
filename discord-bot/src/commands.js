@@ -8,6 +8,10 @@ export const GAMES = {
     label: 'HumanityZ',
     rconPort: 8888,
   },
+  cs2: {
+    label: 'CS2',
+    rconPort: 27016,
+  },
 };
 
 export const GAME_CHOICES = Object.entries(GAMES).map(([value, game]) => ({

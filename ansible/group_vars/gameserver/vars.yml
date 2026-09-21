@@ -11,11 +11,38 @@ aio_username: victortramontina
 # One entry per supported game. Adding a new game to the whole project
 # means: add a Docker Compose service, add an entry here, add a
 # vault_rcon_pass_<name> secret, and add a choice in discord-bot/src/commands.js.
+#
+# game_type identifies which per-game "adapter" this entry uses -- the
+# config-file generator in ansible/roles/docker/tasks/games/<game_type>.yml
+# and the RCON player-count adapter in ansible/files/game_adapters/<game_type>.py.
+# Several games can share a game_type if they're the same underlying server
+# software (e.g. a modded variant). A game with no existing adapter needs a
+# new games/<game_type>.yml and game_adapters/<game_type>.py -- see
+# docs/architecture.md.
 games:
   humanityz:
     label: HumanityZ
+    game_type: humanityz
     compose_service: humanityz
     rcon_host: 127.0.0.1
     rcon_port: 8888
     max_players: 16
     volume_path: "{{ homelab_dir }}/server/volumes/humanityz"
+
+  cs2:
+    label: CS2
+    game_type: cs2
+    compose_service: cs2
+    rcon_host: 127.0.0.1
+    # CS2's dedicated server only speaks RCON on the main game port
+    # (27015, publicly tunneled) unless CS2_RCON_PORT says otherwise --
+    # this moves it to its own loopback-only port instead. See
+    # server/docker-compose.yml.
+    rcon_port: 27016
+    max_players: 10
+    volume_path: "{{ homelab_dir }}/server/volumes/cs2"
+    # game_type-specific knobs, read by games/cs2.yml /
+    # templates/games/cs2.env.j2 only -- the generic Python daemons never
+    # look at these.
+    cs2_start_map: de_inferno
+    cs2_game_alias: competitive

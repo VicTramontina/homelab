@@ -1,0 +1,25 @@
+---
+# Config-file generation for game_type "cs2" (joedwards32/cs2 image).
+# Every setting this image exposes is env-var driven (there's no on-disk
+# config file to template), so this renders a *.env file (gitignored by
+# the repo's blanket `*.env` rule) with the settings docker-compose.yml
+# can't hold directly as plain text: the RCON password, the optional join
+# password, and the Steam Game Server Login Token (GSLT).
+#
+# Unlike humanityz.yml's image, this one does NOT chown the mounted
+# volume itself -- its own docs say to pre-create it owned by uid/gid
+# 1000 (the "steam" user it runs as), so this sets ownership explicitly.
+- name: "[{{ game_name }}] Create CS2 volume directory"
+  ansible.builtin.file:
+    path: "{{ game.volume_path }}"
+    state: directory
+    mode: "0755"
+    owner: "1000"
+    group: "1000"
+
+- name: "[{{ game_name }}] Render CS2 env file (server name/map, RCON/join secrets, GSLT)"
+  ansible.builtin.template:
+    src: games/cs2.env.j2
+    dest: "{{ homelab_dir }}/server/{{ game_name }}.env"
+    mode: "0600"
+  no_log: true
