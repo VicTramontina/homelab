@@ -13,6 +13,7 @@ aio_username: victortramontina
 # vault_rcon_pass_<name> secret, and add a choice in discord-bot/src/commands.js.
 games:
   humanityz:
+    label: HumanityZ
     compose_service: humanityz
     rcon_host: 127.0.0.1
     rcon_port: 8888

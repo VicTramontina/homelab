@@ -30,3 +30,11 @@ vault_r2_secret_access_key: "changeme-r2-secret-access-key"
 # Key from https://playit.gg/account/agents -- no need to actually run
 # Docker, the key works the same for the native Linux agent.
 vault_playit_secret_key: "changeme-playit-secret-key"
+
+# Discord channel webhook URL: game-manager posts state-change
+# notifications here (game started/stopped/backed up, PC shutting down),
+# for both manual commands and automatic idle-triggered actions. Optional:
+# leave unset (or don't set this key at all) to skip notifications
+# entirely. Create one via Discord: Channel Settings -> Integrations ->
+# Webhooks -> New Webhook -> Copy Webhook URL.
+vault_discord_webhook_url: "changeme-discord-webhook-url"

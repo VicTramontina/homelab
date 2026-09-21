@@ -5,9 +5,11 @@
   "compose_dir": "{{ homelab_dir }}/server",
   "r2_bucket": "{{ r2_bucket }}",
   "backups_to_keep": {{ backups_to_keep }},
+  "discord_webhook_url": "{{ vault_discord_webhook_url | default('') }}",
   "games": {
 {% for name, game in games.items() %}
     "{{ name }}": {
+      "label": "{{ game.label | default(name) }}",
       "compose_service": "{{ game.compose_service }}",
       "rcon_host": "{{ game.rcon_host }}",
       "rcon_port": {{ game.rcon_port }},

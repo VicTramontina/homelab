@@ -15,6 +15,9 @@ import json
 import ssl
 import subprocess
 import sys
+import time
+import urllib.error
+import urllib.request
 
 import paho.mqtt.client as mqtt
 
@@ -22,6 +25,8 @@ CONFIG_PATH = "/opt/homelab/config.json"
 STATE_PATH = "/opt/homelab/last_processed_command.json"
 MQTT_HOST = "io.adafruit.com"
 MQTT_PORT = 8883
+READY_TIMEOUT_SECONDS = 300
+READY_POLL_INTERVAL_SECONDS = 5
 
 
 def load_config() -> dict:
@@ -56,6 +61,61 @@ def run_backup(config: dict, game: str) -> None:
     subprocess.run([f"{config['homelab_dir']}/backup.sh", game], check=True)
 
 
+def notify_discord(config: dict, message: str) -> None:
+    webhook_url = config.get("discord_webhook_url")
+    if not webhook_url:
+        return
+    body = json.dumps({"content": message}).encode("utf-8")
+    req = urllib.request.Request(
+        webhook_url,
+        data=body,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read()
+    except (urllib.error.URLError, OSError) as exc:
+        print(f"game-manager: failed to notify Discord: {exc}", file=sys.stderr)
+
+
+def describe_source(payload: dict) -> str:
+    if payload.get("source") == "activity-monitor":
+        return "due to inactivity"
+    user = payload.get("user")
+    return f"by <@{user}>" if user and user != "system" else "manually"
+
+
+def game_label(config: dict, game: str) -> str:
+    return config["games"][game].get("label", game)
+
+
+def wait_for_ready(config: dict, game: str) -> bool:
+    """Poll until the container is healthy (or just running, for images
+    with no healthcheck defined) or READY_TIMEOUT_SECONDS elapses."""
+    service = config["games"][game]["compose_service"]
+    deadline = time.time() + READY_TIMEOUT_SECONDS
+    while time.time() < deadline:
+        result = subprocess.run(
+            [
+                "docker",
+                "inspect",
+                "-f",
+                "{{.State.Running}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}",
+                service,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            running, _, health = result.stdout.strip().partition("|")
+            if running == "true" and health in ("healthy", "none"):
+                return True
+        time.sleep(READY_POLL_INTERVAL_SECONDS)
+    return False
+
+
 def running_games(config: dict) -> list[str]:
     running = []
     for name, game in config["games"].items():
@@ -73,20 +133,34 @@ def running_games(config: dict) -> list[str]:
 def handle_command(config: dict, payload: dict) -> None:
     action = payload.get("action")
     target = payload.get("target")
+    source_desc = describe_source(payload)
 
     if action == "start_game" and target in config["games"]:
+        label = game_label(config, target)
         compose(config, "start", config["games"][target]["compose_service"])
+        if wait_for_ready(config, target):
+            notify_discord(config, f"✅ **{label}** is up and ready to play!")
+        else:
+            notify_discord(
+                config,
+                f"⚠️ **{label}** is taking longer than expected to start. Check `/status`.",
+            )
 
     elif action == "stop_game" and target in config["games"]:
+        label = game_label(config, target)
         run_backup(config, target)
         compose(config, "stop", config["games"][target]["compose_service"])
+        notify_discord(config, f"⏸️ **{label}** stopped ({source_desc}), backup done.")
 
     elif action == "backup_game" and target in config["games"]:
+        label = game_label(config, target)
         run_backup(config, target)
+        notify_discord(config, f"💾 Backup of **{label}** completed.")
 
     elif action == "shutdown_pc":
         for game in running_games(config):
             run_backup(config, game)
+        notify_discord(config, f"🌙 PC shutting down ({source_desc}), all backups done.")
         print("game-manager: shutting down")
         subprocess.run(["shutdown", "-h", "now"], check=True)
 

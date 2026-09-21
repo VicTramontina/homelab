@@ -96,16 +96,25 @@ function buildStatusEmbed(status, gameFilter = null) {
 }
 
 const ACTION_VERBS = {
-  start_game: 'Start requested',
-  stop_game: 'Stop requested (backup will run first)',
-  backup_game: 'Backup requested',
-  shutdown_pc: 'Shutdown requested (backups will run first)',
+  start_game: '🔄 Start requested',
+  stop_game: '🔄 Stop requested',
+  backup_game: '🔄 Backup requested',
+  shutdown_pc: '🔄 Shutdown requested',
+};
+
+const NOTIFY_HINTS = {
+  start_game: 'Waking the PC and starting the server. This can take a few minutes, I\'ll post here when it\'s ready.',
+  stop_game: 'Backing up first, then stopping. I\'ll confirm here once done.',
+  backup_game: '',
+  shutdown_pc: 'Backing up any running games first. I\'ll confirm here once the PC is off.',
 };
 
 async function runAction(env, action, target, userId) {
   await publishCommand(env, { action, target, userId });
   const gameLabel = target ? (GAMES[target]?.label ?? target) : 'the PC';
-  return `${ACTION_VERBS[action] ?? action} for **${gameLabel}**.`;
+  const hint = NOTIFY_HINTS[action];
+  const base = `${ACTION_VERBS[action] ?? action} for **${gameLabel}**.`;
+  return hint ? `${base} ${hint}` : base;
 }
 
 async function handleApplicationCommand(env, interaction) {

@@ -132,8 +132,8 @@ laptop, or the server itself against `localhost`).
    `hostname -I` on the server itself) and SSH user. The playbook
    installs mDNS (`avahi-daemon`) on this same run, so *after* it
    finishes once, switch `ansible_host` to `<hostname>.local` (e.g.
-   `bigaserver.local` -- check the server's hostname with `hostname`) --
-   that keeps working even if you change routers or the DHCP lease
+   `bigaserver.local`, check the server's hostname with `hostname`).
+   That keeps working even if you change routers or the DHCP lease
    changes, unlike a hardcoded IP.
 3. Edit `group_vars/gameserver/vars.yml`: set `aio_username`, `r2_bucket`,
    `r2_endpoint` (from step 3) to your real values.
@@ -144,7 +144,13 @@ laptop, or the server itself against `localhost`).
    ```
    Fill it in following the structure documented in
    `group_vars/gameserver/vault.yml.example` (includes
-   `vault_playit_secret_key` from step 4).
+   `vault_playit_secret_key` from step 4). `vault_discord_webhook_url`
+   is optional: set it to get state-change notifications posted to a
+   Discord channel (game started/stopped/backed up, PC shutting down),
+   for both manual commands and automatic idle-triggered actions.
+   Create one via Discord: Channel Settings -> Integrations -> Webhooks
+   -> New Webhook -> Copy Webhook URL. Leave the key out of the vault
+   entirely to skip notifications.
 5. Run the playbook:
    ```
    ansible-playbook -i inventory.ini setup-server.yml --ask-vault-pass
