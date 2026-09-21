@@ -70,7 +70,12 @@ def notify_discord(config: dict, message: str) -> None:
         webhook_url,
         data=body,
         method="POST",
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            # Discord's edge rejects Python's default "Python-urllib/x.y"
+            # User-Agent with a 403, unrelated to the webhook itself.
+            "User-Agent": "homelab-game-manager/1.0",
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
