@@ -83,3 +83,47 @@ services:
       - "127.0.0.1:27016:27016/tcp" # RCON (CS2_RCON_PORT), loopback-only, never tunneled
     volumes:
       - ./volumes/cs2:/home/steam/cs2-dedicated
+
+  # Unlike the game services above, netdata IS meant to run continuously
+  # whenever the PC is on (restart: unless-stopped) -- it's monitoring the
+  # PC itself, not a game session, so there's no "idle" concept for it.
+  # The docker role starts it explicitly after provisioning; it isn't
+  # covered by game-manager/activity-monitor.
+  #
+  # Bound to all interfaces like the game ports (not loopback-only like
+  # RCON) because the whole point is to view the dashboard from another
+  # machine on the LAN, at http://<hostname>.local:19999 -- safe under
+  # the same "no port forwarding on the router" invariant documented in
+  # docs/architecture.md. It is NOT authenticated, so don't tunnel this
+  # port publicly (e.g. via playit.gg) the way the game ports are.
+  #
+  # /var/run/docker.sock is mounted read-only so netdata auto-discovers
+  # and reports per-container stats for humanityz/cs2 alongside system
+  # metrics, with no extra config.
+  netdata:
+    image: netdata/netdata:stable
+    container_name: netdata
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "19999:19999"
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdataconfig:/etc/netdata
+      - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  netdataconfig:
+  netdatalib:
+  netdatacache:

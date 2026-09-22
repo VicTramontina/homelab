@@ -159,8 +159,11 @@ laptop, or the server itself against `localhost`).
    `<hostname>.local` from here on), Docker, creates the HumanityZ
    container (without starting it), writes `GameServerSettings.ini`
    with your chosen RCON password, installs and starts the `playit`
-   agent, installs the Claude Code CLI, and installs/enables the three
-   systemd services (`homelab-status-daemon`, `homelab-game-manager`,
+   agent, installs the Claude Code CLI, starts the netdata monitoring
+   dashboard (reachable at `http://<hostname>.local:19999` from any
+   machine on the LAN -- see `docs/architecture.md`), and
+   installs/enables the three systemd services
+   (`homelab-status-daemon`, `homelab-game-manager`,
    `homelab-activity-monitor`) plus `backup.sh`/rclone.
 6. Back in the playit.gg dashboard, the agent should now show as online
    -- finish step 4.3 (create the tunnel) if you haven't yet.

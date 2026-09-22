@@ -118,3 +118,13 @@
     cmd: docker compose -f {{ homelab_dir }}/server/docker-compose.yml up --no-start
     chdir: "{{ homelab_dir }}/server"
   changed_when: true
+
+# netdata is the one compose service meant to run continuously while the
+# PC is on (restart: unless-stopped covers it across reboots/wake-ups
+# from here on) -- unlike the game services, it's not started on-demand
+# by game-manager, so it needs its own explicit start here.
+- name: Start netdata
+  ansible.builtin.command:
+    cmd: docker compose -f {{ homelab_dir }}/server/docker-compose.yml up -d netdata
+    chdir: "{{ homelab_dir }}/server"
+  changed_when: true

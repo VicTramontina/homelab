@@ -30,6 +30,12 @@ setup.
 The `/status` embed also has **Start/Stop** and **Backup** buttons per
 game for people who'd rather click than type.
 
+A real-time dashboard of the PC itself (CPU, RAM, disk, network,
+temperatures) and the game containers is available at
+`http://<hostname>.local:19999` from any machine on the LAN, powered by
+[netdata](https://www.netdata.cloud/) -- see
+[`docs/architecture.md`](docs/architecture.md#monitoring-dashboard-netdata).
+
 ## Repo layout
 
 - `discord-bot/` -- Cloudflare Worker implementing the bot (HTTP

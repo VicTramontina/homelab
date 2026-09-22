@@ -26,7 +26,7 @@ Ubuntu Server LTS (headless, off most of the time)
    - game-manager:      executes start/stop/backup/shutdown
    - backup-scheduler:  backup.sh, invoked by game-manager only
    - playit-agent:      outbound-only tunnel, no router port forwarding
-   - Docker Compose:    one service per game, none auto-start
+   - Docker Compose:    one service per game (none auto-start), plus netdata (auto-starts)
 
 Friends -----> playit.gg relay -----> playit-agent -----> game port (local)
 ```
@@ -94,6 +94,27 @@ status-daemon only runs while the PC is on, so `pc_state` is always
 reported as `"on"`. There is intentionally no daemon publishing `"off"` --
 a machine that's off can't run one. The Worker (or a human reading the
 Discord embed) infers "probably off" from the feed simply going stale.
+
+## Monitoring dashboard (netdata)
+
+[netdata](https://www.netdata.cloud/) runs as its own Docker Compose
+service (`server/docker-compose.yml`), giving a real-time, zero-config
+dashboard of the PC itself (CPU, RAM, disk, network, temperatures) plus
+per-container stats for `humanityz`/`cs2` (auto-discovered via a
+read-only mount of `/var/run/docker.sock`).
+
+It's the one compose service that behaves unlike the games: it uses
+`restart: unless-stopped` and is started explicitly by the `docker` role
+right after provisioning, so it comes up on its own whenever the PC wakes
+-- there's no on-demand start/stop for it, and `game-manager` /
+`activity-monitor` don't know it exists.
+
+Reachable at `http://<hostname>.local:19999` (e.g. `bigaserver.local`)
+from any machine on the same LAN, over the mDNS name the `mdns` role
+sets up. Bound to all interfaces like the game ports, relying on the
+same "no port forwarding on the router" invariant described below --
+**not** tunneled through playit.gg like the game ports, since the
+dashboard has no authentication of its own.
 
 ## Networking: no port forwarding
 
