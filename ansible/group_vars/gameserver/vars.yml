@@ -41,6 +41,13 @@ games:
     rcon_port: 27016
     max_players: 10
     volume_path: "{{ homelab_dir }}/server/volumes/cs2"
+    # No backup: the volume is a ~70GB SteamCMD install, not save data --
+    # tar-ing it took nearly an hour and blocked game-manager's single
+    # MQTT processing thread the whole time (confirmed live: a queued
+    # /start for another game didn't run until the backup finished).
+    # config.json.j2 defaults `backup` to true when a game omits it, so
+    # every other game keeps backing up without needing this key at all.
+    backup: false
     # game_type-specific knobs, read by games/cs2.yml /
     # templates/games/cs2.env.j2 only -- the generic Python daemons never
     # look at these.

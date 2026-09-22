@@ -58,12 +58,17 @@ def compose(config: dict, *args: str) -> None:
     subprocess.run(cmd, cwd=config["compose_dir"], check=True)
 
 
-def run_backup(config: dict, game: str) -> None:
+def run_backup(config: dict, game: str) -> bool:
+    """Returns whether a backup actually ran (False for unknown/backup-disabled games)."""
     if game not in config["games"]:
         print(f"game-manager: unknown game '{game}', skipping backup", file=sys.stderr)
-        return
+        return False
+    if not config["games"][game].get("backup", True):
+        print(f"game-manager: backups disabled for {game}, skipping", file=sys.stderr)
+        return False
     print(f"game-manager: backing up {game}")
     subprocess.run([f"{config['homelab_dir']}/backup.sh", game], check=True)
+    return True
 
 
 def notify_discord(config: dict, message: str) -> None:
@@ -158,19 +163,22 @@ def handle_command(config: dict, payload: dict) -> None:
 
     elif action == "stop_game" and target in config["games"]:
         label = game_label(config, target)
-        run_backup(config, target)
+        backed_up = run_backup(config, target)
         compose(config, "stop", config["games"][target]["compose_service"])
-        notify_discord(config, f"⏸️ **{label}** stopped ({source_desc}), backup done.")
+        suffix = "backup done" if backed_up else "no backup for this game"
+        notify_discord(config, f"⏸️ **{label}** stopped ({source_desc}), {suffix}.")
 
     elif action == "backup_game" and target in config["games"]:
         label = game_label(config, target)
-        run_backup(config, target)
-        notify_discord(config, f"💾 Backup of **{label}** completed.")
+        if run_backup(config, target):
+            notify_discord(config, f"💾 Backup of **{label}** completed.")
+        else:
+            notify_discord(config, f"ℹ️ **{label}** has backups disabled, nothing to do.")
 
     elif action == "shutdown_pc":
         for game in running_games(config):
             run_backup(config, game)
-        notify_discord(config, f"🌙 PC shutting down ({source_desc}), all backups done.")
+        notify_discord(config, f"🌙 PC shutting down ({source_desc}), backups done for games that have them.")
         print("game-manager: shutting down")
         subprocess.run(["shutdown", "-h", "now"], check=True)
 
