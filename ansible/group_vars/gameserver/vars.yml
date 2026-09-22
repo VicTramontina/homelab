@@ -46,3 +46,10 @@ games:
     # look at these.
     cs2_start_map: de_inferno
     cs2_game_alias: competitive
+
+# Ports that need host-level firewall protection (ansible/roles/firewall)
+# because their game service runs with `network_mode: host` in
+# server/docker-compose.yml -- Docker's own loopback-only port mapping
+# (`127.0.0.1:<port>:<port>`) doesn't apply under host networking.
+host_network_rcon_ports:
+  - 27016 # cs2 RCON (CS2_RCON_PORT)

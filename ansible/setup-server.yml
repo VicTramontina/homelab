@@ -13,6 +13,7 @@
     - mdns
     - wol-persist
     - docker
+    - firewall
     - claude-code
     - playit-agent
     - status-daemon

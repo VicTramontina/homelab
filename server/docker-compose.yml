@@ -75,12 +75,24 @@ services:
     logging: *default-logging
     stdin_open: true # matches upstream's own compose example
     tty: true
+    # Bridge networking (Docker's default, used by every other service
+    # here) breaks CS2's own reliable-UDP layer: confirmed live that
+    # inbound player packets get DNAT'd into the container correctly, but
+    # come back out re-addressed as the bridge gateway (e.g. 172.18.0.1)
+    # rather than the real client -- true with docker-proxy AND with
+    # userland-proxy disabled, so it's Docker's bridge/MASQUERADE chain
+    # itself, not the proxy implementation. Every connecting player got
+    # "reply timeouts" climbing to a hard disconnect within ~10s. Host
+    # networking sidesteps Docker's NAT for this container entirely.
+    #
+    # `ports:` is meaningless under host networking (the process binds
+    # host ports directly per CS2_PORT/CS2_RCON_PORT in cs2.env) -- RCON
+    # no longer gets Docker's loopback-only port mapping, so
+    # ansible/roles/firewall protects it with a host iptables rule
+    # instead. See docs/architecture.md.
+    network_mode: host
     env_file:
       - ./cs2.env # server name/map, RCON+join secrets, GSLT -- see games/cs2.yml
-    ports:
-      - "27015:27015/tcp"
-      - "27015:27015/udp"
-      - "127.0.0.1:27016:27016/tcp" # RCON (CS2_RCON_PORT), loopback-only, never tunneled
     volumes:
       - ./volumes/cs2:/home/steam/cs2-dedicated
 

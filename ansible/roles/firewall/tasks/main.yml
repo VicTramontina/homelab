@@ -1,0 +1,48 @@
+---
+# Protects game RCON ports that lose Docker's loopback-only port mapping
+# once a game service switches to `network_mode: host` (see
+# server/docker-compose.yml's cs2 comment for why that's needed at all --
+# Docker's bridge NAT/MASQUERADE chain breaks CS2's own reliable-UDP
+# layer). Under host networking nothing restricts that port to loopback
+# except this.
+#
+# iptables-persistent reloads /etc/iptables/rules.v4 at boot. This host
+# reboots often by design (WoL wake, auto-shutdown), so a rule that only
+# lived in the kernel's in-memory table until the next Ansible run would
+# leave RCON exposed on every wake until someone happened to redeploy.
+- name: Pre-seed iptables-persistent's save-current-rules prompts
+  ansible.builtin.debconf:
+    name: iptables-persistent
+    question: "{{ item }}"
+    value: "false"
+    vtype: boolean
+  loop:
+    - iptables-persistent/autosave_v4
+    - iptables-persistent/autosave_v6
+
+- name: Install iptables-persistent
+  ansible.builtin.apt:
+    name: iptables-persistent
+    state: present
+    update_cache: true
+
+- name: Allow loopback access to host-networked game RCON ports
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ item }}"
+    source: 127.0.0.1
+    jump: ACCEPT
+  loop: "{{ host_network_rcon_ports }}"
+
+- name: Drop all other access to those same RCON ports
+  ansible.builtin.iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ item }}"
+    jump: DROP
+  loop: "{{ host_network_rcon_ports }}"
+
+- name: Persist the current iptables rules
+  ansible.builtin.command: netfilter-persistent save
+  changed_when: true
