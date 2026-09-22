@@ -90,12 +90,15 @@ dashboard.
    **Interactions Endpoint URL** to `https://<your-worker>.workers.dev`.
    Discord will send a PING immediately -- if the Worker responds with
    PONG, the URL is accepted.
-6. Register the slash commands (run locally, not deployed):
+6. Register the slash commands for the first time:
    ```
    DISCORD_BOT_TOKEN=<bot token> DISCORD_APPLICATION_ID=<application id> \
      node scripts/register-commands.js
    ```
-   Global commands can take up to an hour to show up the first time.
+   Global commands can take up to an hour to show up the first time. Once
+   the GitHub Actions secrets in step 9 are set, this re-runs
+   automatically on every push to `discord-bot/**` (e.g. adding a game to
+   `COMMAND_DEFINITIONS`), so this manual run is a one-time bootstrap.
 
 ## 7. Ubuntu Server LTS on the physical PC
 
@@ -181,6 +184,13 @@ In the repo's Settings -> Secrets and variables -> Actions, add:
   [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens),
   template "Edit Cloudflare Workers"). Used by `deploy-worker.yml` to run
   `wrangler deploy` on every push to `discord-bot/**`.
+- `DISCORD_BOT_TOKEN` and `DISCORD_APPLICATION_ID` -- the same values
+  used for the manual `register-commands.js` run in step 6.6 (Discord
+  Developer Portal -> your app -> Bot, and -> General Information).
+  Used by the same workflow to re-run `register-commands.js` after every
+  deploy, so a `COMMAND_DEFINITIONS` change (e.g. a new game) reaches
+  Discord's `/start` `/stop` `/status` `/backup` dropdowns without a
+  manual step.
 
 ## 10. Try it end to end
 

@@ -27,3 +27,14 @@ jobs:
         run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      # Slash command definitions (COMMAND_DEFINITIONS in src/commands.js)
+      # are registered with Discord separately from the Worker code --
+      # this is what actually updates the /start /stop /status /backup
+      # game dropdowns. Re-running on every deploy is harmless (PUT is
+      # idempotent, a no-op if COMMAND_DEFINITIONS didn't change).
+      - name: Register Discord slash commands
+        run: node scripts/register-commands.js
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_APPLICATION_ID: ${{ secrets.DISCORD_APPLICATION_ID }}
