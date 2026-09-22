@@ -123,7 +123,7 @@ every interface.
 
 | Game       | Game type   | Compose service | Game port(s)         | RCON port          | Idle-stop threshold |
 |------------|-------------|------------------|-----------------------|---------------------|----------------------|
-| HumanityZ  | `humanityz` | `humanityz`      | 7777/udp, 27015/udp   | 8888/tcp            | 15 min, 0 players    |
+| HumanityZ  | `humanityz` | `humanityz`      | 7777/udp, 27017/udp   | 8888/tcp            | 15 min, 0 players    |
 | CS2        | `cs2`       | `cs2`            | 27015/tcp+udp         | 27016/tcp (CS2_RCON_PORT) | 15 min, 0 humans (bots don't count) |
 
 Adding a game means: a new Docker Compose service, a new entry in

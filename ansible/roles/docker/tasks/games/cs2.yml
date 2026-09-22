@@ -7,15 +7,18 @@
 # password, and the Steam Game Server Login Token (GSLT).
 #
 # Unlike humanityz.yml's image, this one does NOT chown the mounted
-# volume itself -- its own docs say to pre-create it owned by uid/gid
-# 1000 (the "steam" user it runs as), so this sets ownership explicitly.
+# volume itself, so this sets ownership explicitly -- to uid/gid 999:988,
+# confirmed against a live container (`docker inspect cs2 --format
+# '{{.Config.User}}'` prints "999:988"). The image's own docs describe
+# this as uid 1000 ("steam"), which is wrong for the version tested here;
+# trust the live container over the docs if this ever needs re-checking.
 - name: "[{{ game_name }}] Create CS2 volume directory"
   ansible.builtin.file:
     path: "{{ game.volume_path }}"
     state: directory
     mode: "0755"
-    owner: "1000"
-    group: "1000"
+    owner: "999"
+    group: "988"
 
 - name: "[{{ game_name }}] Render CS2 env file (server name/map, RCON/join secrets, GSLT)"
   ansible.builtin.template:
