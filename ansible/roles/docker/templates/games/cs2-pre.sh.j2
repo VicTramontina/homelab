@@ -35,12 +35,23 @@ install_addon() {
     mkdir -p "${CSGO}/${dest}"
     cp -a "${tmp}/x/${subdir}/." "${CSGO}/${dest}/"
     touch "${marker}"
+    chmod -R u+w "${tmp}"
     rm -rf "${tmp}"
 }
 
 {% for addon in cs2_addons %}
 install_addon {{ addon.name | quote }} {{ addon.url | quote }} {{ addon.subdir | default('.') | quote }} {{ addon.dest | default('.') | quote }}
 {% endfor %}
+
+# Config managed by Ansible (modes, per-map cfgs), staged in homelab-cfg/ and
+# applied after every addon so it wins over the example cfgs addons ship.
+rm -f "${CSGO}"/cfg/Map-Configs-GoldKingZ/{aim_,de_,de_dust2}.cfg
+if [[ -d "${STEAMAPPDIR}/homelab-cfg" ]]; then
+    cp -a "${STEAMAPPDIR}/homelab-cfg/." "${CSGO}/cfg/"
+fi
+if [[ -f "${CSGO}/cfg/SharpTimer/example.config.cfg" && ! -f "${CSGO}/cfg/SharpTimer/config.cfg" ]]; then
+    cp "${CSGO}/cfg/SharpTimer/example.config.cfg" "${CSGO}/cfg/SharpTimer/config.cfg"
+fi
 
 # The image's glibc refuses to dlopen shared objects that request an
 # executable stack (CounterStrikeSharp's native library does): clear the

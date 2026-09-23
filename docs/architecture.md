@@ -205,30 +205,44 @@ The CS2 image sources `pre.sh` from the volume on every start; Ansible
 renders it (`roles/docker/templates/games/cs2-pre.sh.j2`) from
 `cs2_addons` in `group_vars/gameserver/vars.yml`. It installs each pinned
 archive once (marker files under `addons/.homelab/`), re-patches
-`gameinfo.gi` for Metamod after every SteamCMD update, and clears the
+`gameinfo.gi` for Metamod after every SteamCMD update, clears the
 executable-stack flag on addon `.so` files (the runtime's glibc refuses to
-`dlopen` them otherwise).
+`dlopen` them otherwise) and finally copies the Ansible-managed cfgs
+(staged in `homelab-cfg/`) over whatever the addons shipped.
 
-Modes are plain cfgs in `cfg/homelab/modes/` (`default`, `bhop`, `surf`,
-`arena`). Switch mode and map at runtime, without redeploying:
+**Mode follows the map.** CS2 never auto-executes a loose per-map cfg, so
+the `Map-Configs-GoldKingZ` plugin does it: `_allmaps_.cfg` resets to
+vanilla and unloads the mode plugins, then the prefix cfg applies its mode
+(`bhop_` and `surf_` -> SharpTimer, `aim_`/`am_` -> the 1v1 rules and
+K4-Arenas ladder). The modes themselves are cfgs in `cfg/homelab/modes/`.
+
+**Map pool.** The server starts on a Workshop map (`cs2_start_workshop_id`)
+and the catalog `cs2_maps` (bhop, surf, 1v1 arenas; picked by lifetime
+Workshop subscriptions) replaces the stock Valve maps as the choices.
+Switch at runtime, no redeploy:
 
 ```
-ssh <server> sudo cs2-mode bhop 3070284539     # mode + Steam Workshop map id
-ssh <server> sudo cs2-mode arena de_inferno    # mode + stock map
-ssh <server> sudo cs2-mode default             # settings only
+ssh <server> cs2-mode --list                # catalog
+ssh <server> sudo cs2-mode surf_kitsune     # map by name, mode inferred
+ssh <server> sudo cs2-mode arena aim_redline
+ssh <server> sudo cs2-mode default de_dust2 # settings only / stock map
 ```
 
-`default` is applied first, so a mode only lists what differs from vanilla.
-The mode is re-applied 25s after the map loads because the engine restores
-its saved cvars when leaving a workshop map and re-runs `gamemode_*.cfg` on
-every load. CS2 does not auto-exec `cfg/<map>.cfg` and has no native
-changelevel vote, hence the CLI. Workshop maps download without a Steam Web
-API key. To add a mode, drop a `<name>.cfg` next to the others.
+`cs2-mode` also applies the mode by hand (and again 25s after the map
+loads: the engine restores its saved cvars when leaving a Workshop map and
+re-runs `gamemode_*.cfg` on every load). It is the fallback while the
+plugin layer is down. Workshop maps download on first use without a Steam
+Web API key. Adding a map: one line in `cs2_maps`, and its internal name
+must start with one of the prefixes above.
 
-Plugins (CounterStrikeSharp, SharpTimer, K4-Arenas, MovementUnlocker,
-RampBugFix, STFixes) are **not installed yet**: all of them were tested
-against CS2 1.41.8.2 (2026-09-22) and broken by that update. The reasons and
-the entries to re-add are documented next to `cs2_addons`.
+**Status: plugins installed but broken by CS2 1.41.8.2 (2026-09-22).**
+CounterStrikeSharp 1.0.374 loads but crashes the server on `Teleport`
+until a release newer than 1.0.374 ships (upstream PRs #1432/#1433);
+MovementUnlocker, RampBugFix and STFixes fail to load; SharpTimer reports
+an outdated `RunCommand` signature. Don't play until they are updated: bump
+the URLs in `cs2_addons` (Metamod to the newest build in the same change)
+and re-test. No in-game map chooser is installed: the maintained options
+are scarce, pick one after CSS is back.
 
 ## Why backups only happen before stop/shutdown
 

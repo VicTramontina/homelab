@@ -38,27 +38,15 @@
     owner: "999"
     group: "988"
 
-# The cfg directory only exists once SteamCMD has installed the game, so
-# create each level with the container's ownership on a fresh volume.
-- name: "[{{ game_name }}] Create cfg directories"
-  ansible.builtin.file:
-    path: "{{ game.volume_path }}/{{ item }}"
-    state: directory
-    mode: "0755"
-    owner: "999"
-    group: "988"
-  loop:
-    - game
-    - game/csgo
-    - game/csgo/cfg
-    - game/csgo/cfg/homelab
-    - game/csgo/cfg/homelab/modes
-
-- name: "[{{ game_name }}] Install mode configs (bhop, surf, arena...)"
+# Staged next to pre.sh (the volume root exists before the game is
+# installed); pre.sh copies it into game/csgo/cfg on every start, after the
+# addons, so this works on a fresh volume too.
+- name: "[{{ game_name }}] Stage cfgs (modes, per-map cfgs)"
   ansible.builtin.copy:
-    src: "cs2/cfg/homelab/modes/"
-    dest: "{{ game.volume_path }}/game/csgo/cfg/homelab/modes/"
+    src: cs2/cfg/
+    dest: "{{ game.volume_path }}/homelab-cfg/"
     mode: "0644"
+    directory_mode: "0755"
     owner: "999"
     group: "988"
 
