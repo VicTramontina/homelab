@@ -34,12 +34,14 @@ vault_gslt_cs2: "changeme-gslt-token"
 vault_r2_access_key_id: "changeme-r2-access-key-id"
 vault_r2_secret_access_key: "changeme-r2-secret-access-key"
 
-# playit.gg agent secret key (playit-agent role) -- lets friends join
-# without VPN or router port forwarding. Get it from playit.gg: create an
-# account, create an agent (any type, e.g. "Docker"), and copy its Secret
-# Key from https://playit.gg/account/agents -- no need to actually run
-# Docker, the key works the same for the native Linux agent.
-vault_playit_secret_key: "changeme-playit-secret-key"
+# playit.gg agent secret key (playit-agent role). OPTIONAL: it only seeds
+# /etc/playit/playit.toml on a brand-new server and never overwrites an
+# existing file. The recommended flow is to claim the agent on the server
+# with `sudo playit setup` instead (docs/setup.md, step 4), so this can stay
+# unset. Do NOT create the agent by hand in the dashboard as type "Docker":
+# run natively, it suffered periodic 5-10s UDP blackouts through the tunnel
+# (measured with a UDP echo test), while a natively claimed agent had none.
+# vault_playit_secret_key: "changeme-playit-secret-key"
 
 # Discord channel webhook URL: game-manager posts state-change
 # notifications here (game started/stopped/backed up, PC shutting down),

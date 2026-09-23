@@ -38,13 +38,21 @@
     state: present
     update_cache: true
 
-- name: Write playit secret key
+# Seeds the secret only when the file doesn't exist yet. An agent claimed on
+# the box with `playit setup` (the documented flow) must never be replaced by
+# an older vault key: an agent created in the dashboard as type "Docker" but
+# run natively caused periodic 5-10s UDP blackouts through the tunnel
+# (measured with a UDP echo test), which dropped every CS2 session. The same
+# tunnel on a natively claimed agent had none.
+- name: Seed playit secret key (first provision only)
   ansible.builtin.template:
     src: playit.toml.j2
     dest: /etc/playit/playit.toml
     owner: playit
     group: playit
     mode: "0600"
+    force: false
+  when: vault_playit_secret_key is defined
   no_log: true
   notify: Restart playit
 

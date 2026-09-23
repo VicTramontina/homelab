@@ -131,8 +131,10 @@ Tunnels (which local port maps to which public playit.gg address) are
 configured once, by hand, in the playit.gg web dashboard -- not in this
 repo -- because they're tied to the agent's account-level secret key, not
 to anything Ansible manages locally. See `docs/setup.md` for the
-one-time dashboard steps. The agent only needs that secret key, stored
-in Ansible Vault as `vault_playit_secret_key`.
+one-time dashboard steps. The agent is claimed once on the server with
+`sudo playit setup`, which writes its secret to `/etc/playit/playit.toml`;
+the role never overwrites an existing file (`vault_playit_secret_key` is
+only an optional seed for a brand-new box).
 
 Only the actual game port is tunneled. RCON (8888/tcp) is deliberately
 **never** tunneled -- it's only ever used locally, by status-daemon and

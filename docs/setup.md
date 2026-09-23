@@ -46,11 +46,13 @@ playit's network; you create the actual tunnel by hand, once, in their
 dashboard.
 
 1. Create a free account at [playit.gg](https://playit.gg).
-2. Go to [playit.gg/account/agents](https://playit.gg/account/agents) and
-   create a new agent (any type works, e.g. "Docker" -- you won't
-   actually run their Docker image, the secret key works the same for
-   the native Linux agent this project installs via Ansible). Copy the
-   **Secret Key**.
+2. Nothing to create by hand in the dashboard yet: the agent is claimed
+   from the server itself in step 8 (`sudo playit setup`, which prints a
+   link you approve in the browser). Don't create the agent in the
+   dashboard as type "Docker" and paste its key in: run natively, it
+   suffered periodic 5-10s UDP blackouts through the tunnel (measured
+   with a UDP echo test), which dropped every CS2 session, while a
+   natively claimed agent had none.
 3. You can't create the tunnel itself until the agent has connected at
    least once, so this part comes back after step 8 (Ansible): once the
    `playit-agent` role has run and the agent shows as online in the
@@ -146,8 +148,7 @@ laptop, or the server itself against `localhost`).
    ansible-vault create group_vars/gameserver/vault.yml
    ```
    Fill it in following the structure documented in
-   `group_vars/gameserver/vault.yml.example` (includes
-   `vault_playit_secret_key` from step 4). `vault_discord_webhook_url`
+   `group_vars/gameserver/vault.yml.example`. `vault_discord_webhook_url`
    is optional: set it to get state-change notifications posted to a
    Discord channel (game started/stopped/backed up, PC shutting down),
    for both manual commands and automatic idle-triggered actions.
@@ -168,8 +169,12 @@ laptop, or the server itself against `localhost`).
    installs/enables the three systemd services
    (`homelab-status-daemon`, `homelab-game-manager`,
    `homelab-activity-monitor`) plus `backup.sh`/rclone.
-6. Back in the playit.gg dashboard, the agent should now show as online
-   -- finish step 4.3 (create the tunnel) if you haven't yet.
+6. Claim the playit agent: SSH into the server and run `sudo playit setup`,
+   then open the link it prints and approve it (pick the native/default
+   agent type). This writes the agent's secret to `/etc/playit/playit.toml`;
+   re-running the playbook never overwrites an existing one. Then, back in
+   the playit.gg dashboard, the agent should show as online -- finish
+   step 4.3 (create the tunnel) if you haven't yet.
 7. Claude Code is installed but not authenticated (Ansible can't do that
    part -- it needs your own Claude account, not a vault secret). SSH in
    and run `claude`, then follow the browser login prompt; or set an
