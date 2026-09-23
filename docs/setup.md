@@ -56,12 +56,19 @@ dashboard.
 3. You can't create the tunnel itself until the agent has connected at
    least once, so this part comes back after step 8 (Ansible): once the
    `playit-agent` role has run and the agent shows as online in the
-   dashboard, go to **Tunnels -> Create Tunnel**, pick UDP, and set the
-   local port to `7777` (HumanityZ's game port; leave the local address
-   as `127.0.0.1`). playit.gg assigns a public address like
+   dashboard, go to **Tunnels -> Create Tunnel** and create one tunnel
+   per game, on the **claimed** agent, leaving the local address as
+   `127.0.0.1` and keeping the local port equal to the game's own port:
+   - HumanityZ: UDP, local port `7777`
+   - CS2: **TCP+UDP** in a single tunnel (not two separate ones, which
+     would get two different public addresses), local port `27015`
+
+   playit.gg assigns each tunnel a public address like
    `something.gl.at.ply.gg:12345` -- that's what you give your friends
-   instead of your home IP. Do not create a tunnel for port `8888`
-   (RCON) -- it's only used locally and is bound to loopback on purpose.
+   instead of your home IP (in CS2: `connect <address>; password <pw>`).
+   Do not create a tunnel for the RCON ports (`8888` HumanityZ, `27016`
+   CS2) -- they're only used locally and are firewalled/bound to
+   loopback on purpose.
 
 ## 5. ESP32 firmware
 

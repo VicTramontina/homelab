@@ -142,6 +142,22 @@ activity-monitor over `127.0.0.1` -- so `server/docker-compose.yml` binds
 it to loopback only (`127.0.0.1:8888:8888`) rather than exposing it on
 every interface.
 
+CS2 is the exception to the Docker port mapping: it runs with
+`network_mode: host` because Docker's bridge NAT breaks its UDP session
+layer (every player got dropped within seconds). Under host networking
+there's no per-port loopback binding anymore, so the `firewall` role adds
+an iptables rule (persisted with `iptables-persistent`, since this box
+reboots constantly) that only lets `127.0.0.1` reach its RCON port
+(`27016`, from `host_network_rcon_ports`).
+
+If players get dropped through the tunnel, test the tunnel itself
+without any game before touching game or Docker config: run a UDP echo
+on the tunnel's local port and send game-like traffic (about 64 pkt/s of
+450 bytes) to the public address, then look for gaps in the echoes. That
+is how the Docker-type agent problem was found (see `docs/setup.md`,
+step 4), and it separates a tunnel problem from a game problem in about
+two minutes.
+
 ## Supported games
 
 | Game       | Game type   | Compose service | Game port(s)         | RCON port          | Idle-stop threshold |
