@@ -39,14 +39,22 @@
     group: "988"
 
 # Staged next to pre.sh (the volume root exists before the game is
-# installed); pre.sh copies it into game/csgo/cfg on every start, after the
+# installed); pre.sh copies it over game/csgo on every start, after the
 # addons, so this works on a fresh volume too.
-- name: "[{{ game_name }}] Stage cfgs (modes, per-map cfgs)"
+- name: "[{{ game_name }}] Stage overlay (mode/per-map cfgs, plugin configs)"
   ansible.builtin.copy:
-    src: cs2/cfg/
-    dest: "{{ game.volume_path }}/homelab-cfg/"
+    src: cs2/overlay/
+    dest: "{{ game.volume_path }}/homelab-overlay/"
     mode: "0644"
     directory_mode: "0755"
+    owner: "999"
+    group: "988"
+
+- name: "[{{ game_name }}] Stage GG1MapChooser map pools (one per mode, from cs2_maps)"
+  ansible.builtin.template:
+    src: games/GGMCmaps.json.j2
+    dest: "{{ game.volume_path }}/homelab-overlay/cfg/GGMCmaps.json"
+    mode: "0644"
     owner: "999"
     group: "988"
 

@@ -1,0 +1,11 @@
+{
+{% for mode, maps in cs2_maps.items() %}
+  {{ mode | capitalize | to_json }}: {
+{% for name, workshop_id in maps.items() %}
+    {{ name | to_json }}: {"ws": true, "display": {{ name | to_json }}, "mapid": {{ workshop_id | to_json }}, "minplayers": 0, "maxplayers": 0, "weight": 1}{{ "," if not loop.last }}
+
+{% endfor %}
+  }{{ "," if not loop.last }}
+
+{% endfor %}
+}

@@ -33,9 +33,9 @@ install_addon() {
         *) tar xzf "${file}" -C "${tmp}/x" ;;
     esac
     mkdir -p "${CSGO}/${dest}"
+    chmod -R u+rwX "${tmp}"
     cp -a "${tmp}/x/${subdir}/." "${CSGO}/${dest}/"
     touch "${marker}"
-    chmod -R u+w "${tmp}"
     rm -rf "${tmp}"
 }
 
@@ -43,11 +43,15 @@ install_addon() {
 install_addon {{ addon.name | quote }} {{ addon.url | quote }} {{ addon.subdir | default('.') | quote }} {{ addon.dest | default('.') | quote }}
 {% endfor %}
 
-# Config managed by Ansible (modes, per-map cfgs), staged in homelab-cfg/ and
-# applied after every addon so it wins over the example cfgs addons ship.
+# Some archives ship read-only directories, which would block later installs.
+chmod -R u+rwX "${CSGO}/addons"
+
+# Config managed by Ansible (mode and per-map cfgs, plugin configs), staged in
+# homelab-overlay/ (mirrors game/csgo) and applied after every addon so it wins
+# over the example files addons ship.
 rm -f "${CSGO}"/cfg/Map-Configs-GoldKingZ/{aim_,de_,de_dust2}.cfg
-if [[ -d "${STEAMAPPDIR}/homelab-cfg" ]]; then
-    cp -a "${STEAMAPPDIR}/homelab-cfg/." "${CSGO}/cfg/"
+if [[ -d "${STEAMAPPDIR}/homelab-overlay" ]]; then
+    cp -a "${STEAMAPPDIR}/homelab-overlay/." "${CSGO}/"
 fi
 if [[ -f "${CSGO}/cfg/SharpTimer/example.config.cfg" && ! -f "${CSGO}/cfg/SharpTimer/config.cfg" ]]; then
     cp "${CSGO}/cfg/SharpTimer/example.config.cfg" "${CSGO}/cfg/SharpTimer/config.cfg"

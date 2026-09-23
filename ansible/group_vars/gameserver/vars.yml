@@ -103,6 +103,12 @@ cs2_addons:
   # mode follow the map, since CS2 never auto-executes a loose per-map cfg.
   - name: map-configs
     url: https://github.com/oqyh/cs2-Map-Configs-GoldKingZ/releases/download/1.0.7/Map-Configs-GoldKingZ.1.0.7.zip
+  # !rtv, !nominate, !rtm (vote the pool), admin map change; one pool per mode
+  # generated from cs2_maps (templates/games/GGMCmaps.json.j2). Workshop maps
+  # by id, actively maintained (v1.8.0, 2026-05).
+  - name: gg1mapchooser
+    url: https://github.com/ssypchenko/GG1MapChooser/releases/download/v1.8.0/GG1MapChooser.1.8.0.zip
+    subdir: csgo
 
 # Map catalog used by `cs2-mode <map name>` (roles/docker/templates/games/
 # cs2-mode.py.j2): name -> Steam Workshop id plus the mode it plays in. Picked

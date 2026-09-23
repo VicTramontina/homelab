@@ -241,8 +241,15 @@ until a release newer than 1.0.374 ships (upstream PRs #1432/#1433);
 MovementUnlocker, RampBugFix and STFixes fail to load; SharpTimer reports
 an outdated `RunCommand` signature. Don't play until they are updated: bump
 the URLs in `cs2_addons` (Metamod to the newest build in the same change)
-and re-test. No in-game map chooser is installed: the maintained options
-are scarce, pick one after CSS is back.
+and re-test.
+
+**In-game map chooser.** GG1MapChooser gives players `!rtv`, `!nominate`,
+`!nextmap`, `!timeleft`, and `!rtm` (vote the pool: Bhop, Surf or Arena),
+with an end-of-map vote every 30 minutes (`mp_timelimit` in the mode cfgs,
+extendable twice). Its pools are generated from `cs2_maps`
+(`templates/games/GGMCmaps.json.j2`) and its settings live in
+`overlay/addons/.../GG1MapChooser.json`. The winning map's prefix then picks
+the mode through Map-Configs, so a vote crossing modes just works.
 
 ## Why backups only happen before stop/shutdown
 
