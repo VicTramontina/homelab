@@ -199,6 +199,37 @@ Reuse an existing `game_type` (e.g. a modded variant of the same server
 software) if both dialects match; otherwise add one new pair of adapter
 files -- everything else stays generic.
 
+## CS2 modes, maps and addons
+
+The CS2 image sources `pre.sh` from the volume on every start; Ansible
+renders it (`roles/docker/templates/games/cs2-pre.sh.j2`) from
+`cs2_addons` in `group_vars/gameserver/vars.yml`. It installs each pinned
+archive once (marker files under `addons/.homelab/`), re-patches
+`gameinfo.gi` for Metamod after every SteamCMD update, and clears the
+executable-stack flag on addon `.so` files (the runtime's glibc refuses to
+`dlopen` them otherwise).
+
+Modes are plain cfgs in `cfg/homelab/modes/` (`default`, `bhop`, `surf`,
+`arena`). Switch mode and map at runtime, without redeploying:
+
+```
+ssh <server> sudo cs2-mode bhop 3070284539     # mode + Steam Workshop map id
+ssh <server> sudo cs2-mode arena de_inferno    # mode + stock map
+ssh <server> sudo cs2-mode default             # settings only
+```
+
+`default` is applied first, so a mode only lists what differs from vanilla.
+The mode is re-applied 25s after the map loads because the engine restores
+its saved cvars when leaving a workshop map and re-runs `gamemode_*.cfg` on
+every load. CS2 does not auto-exec `cfg/<map>.cfg` and has no native
+changelevel vote, hence the CLI. Workshop maps download without a Steam Web
+API key. To add a mode, drop a `<name>.cfg` next to the others.
+
+Plugins (CounterStrikeSharp, SharpTimer, K4-Arenas, MovementUnlocker,
+RampBugFix, STFixes) are **not installed yet**: all of them were tested
+against CS2 1.41.8.2 (2026-09-22) and broken by that update. The reasons and
+the entries to re-add are documented next to `cs2_addons`.
+
 ## Why backups only happen before stop/shutdown
 
 The PC is off most of the time, so a fixed cron-style schedule (e.g.

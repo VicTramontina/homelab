@@ -26,3 +26,44 @@
     dest: "{{ homelab_dir }}/server/{{ game_name }}.env"
     mode: "0600"
   no_log: true
+
+# pre.sh is sourced by the image's entrypoint on every start (it only seeds
+# its own no-op copy when the file is missing), so ours wins. It installs
+# Metamod and whatever else is listed in cs2_addons.
+- name: "[{{ game_name }}] Render pre.sh (addon installer)"
+  ansible.builtin.template:
+    src: games/cs2-pre.sh.j2
+    dest: "{{ game.volume_path }}/pre.sh"
+    mode: "0755"
+    owner: "999"
+    group: "988"
+
+# The cfg directory only exists once SteamCMD has installed the game, so
+# create each level with the container's ownership on a fresh volume.
+- name: "[{{ game_name }}] Create cfg directories"
+  ansible.builtin.file:
+    path: "{{ game.volume_path }}/{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "999"
+    group: "988"
+  loop:
+    - game
+    - game/csgo
+    - game/csgo/cfg
+    - game/csgo/cfg/homelab
+    - game/csgo/cfg/homelab/modes
+
+- name: "[{{ game_name }}] Install mode configs (bhop, surf, arena...)"
+  ansible.builtin.copy:
+    src: "cs2/cfg/homelab/modes/"
+    dest: "{{ game.volume_path }}/game/csgo/cfg/homelab/modes/"
+    mode: "0644"
+    owner: "999"
+    group: "988"
+
+- name: "[{{ game_name }}] Install cs2-mode (switch mode/map over RCON)"
+  ansible.builtin.template:
+    src: games/cs2-mode.py.j2
+    dest: /usr/local/bin/cs2-mode
+    mode: "0755"

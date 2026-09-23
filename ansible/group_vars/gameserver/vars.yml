@@ -54,6 +54,39 @@ games:
     cs2_start_map: de_inferno
     cs2_game_alias: competitive
 
+# Metamod:Source and plugins, installed by the generated pre.sh
+# (roles/docker/templates/games/cs2-pre.sh.j2) on container start. Pinned on
+# purpose: bump a URL to upgrade; the marker file makes the change reinstall
+# just that entry. `subdir` is the folder inside the archive to copy from;
+# `dest` is relative to game/csgo. CS2 runs on Steam Runtime 4.
+cs2_addons:
+  - name: metamod
+    url: https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1469/mmsource-2.0.0-git1469-linux.tar.gz
+
+# PENDING -- every plugin below was tested live on CS2 1.41.8.2 (2026-09-22)
+# and is broken by that update, so none is installed yet:
+#   - CounterStrikeSharp 1.0.374: SourceHook API 17 (Metamod master is 18),
+#     and its stale gamedata crashes the server on Teleport (upstream PRs
+#     roflmuffin/CounterStrikeSharp #1432/#1433).
+#   - MovementUnlocker v2.0 (steamrt4): segfaults at load.
+#   - RampBugFix 5-1 and STFixes 10-22: "undefined symbol
+#     g_bUpdateStringTokenDatabase" (built against an older tier0).
+#   - SharpTimer 0.4.0: "RunCommand hook failed. Signature is likely outdated".
+# Re-test when new releases appear, then add entries back to cs2_addons:
+#   - name: counterstrikesharp
+#     url: https://github.com/roflmuffin/CounterStrikeSharp/releases/download/<tag>/counterstrikesharp-with-runtime-linux-<ver>.zip
+#   - name: movementunlocker / rampbugfix / stfixes   (bhop + surf fixes)
+#   - name: cs2-tags            # SharpTimer dependency
+#     url: https://github.com/CounterStrike2-Plugins-Archive/cs2-tags/releases/download/v1.15/cs2-tags-v1.15.zip
+#     dest: addons/counterstrikesharp
+#   - name: sharptimer          # bhop/surf timer, zones, rankings
+#     url: https://github.com/Letaryat/poor-sharptimer/releases/download/v0.4.0/SharpTimer-v0.4.0.zip
+#     subdir: SharpTimer-v0.4.0
+#   - name: k4-arenas           # ranked multi-player 1v1 ladder
+#     url: https://github.com/K4ryuu/K4-Arenas/releases/download/v2.0.8/K4-Arenas.zip
+#     subdir: K4-Arenas
+#     dest: addons/counterstrikesharp
+
 # Ports that need host-level firewall protection (ansible/roles/firewall)
 # because their game service runs with `network_mode: host` in
 # server/docker-compose.yml -- Docker's own loopback-only port mapping
