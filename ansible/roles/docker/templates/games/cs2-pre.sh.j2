@@ -27,14 +27,21 @@ install_addon() {
         rm -rf "${tmp}"
         return 0
     fi
-    mkdir -p "${tmp}/x"
     case "${url}" in
-        *.zip) unzip -o -q "${file}" -d "${tmp}/x" ;;
-        *) tar xzf "${file}" -C "${tmp}/x" ;;
+        *.json)
+            mkdir -p "$(dirname "${CSGO}/${dest}")"
+            cp "${file}" "${CSGO}/${dest}"
+            ;;
+        *)
+            mkdir -p "${tmp}/x" "${CSGO}/${dest}"
+            case "${url}" in
+                *.zip) unzip -o -q "${file}" -d "${tmp}/x" ;;
+                *) tar xzf "${file}" -C "${tmp}/x" ;;
+            esac
+            chmod -R u+rwX "${tmp}"
+            cp -a "${tmp}/x/${subdir}/." "${CSGO}/${dest}/"
+            ;;
     esac
-    mkdir -p "${CSGO}/${dest}"
-    chmod -R u+rwX "${tmp}"
-    cp -a "${tmp}/x/${subdir}/." "${CSGO}/${dest}/"
     touch "${marker}"
     rm -rf "${tmp}"
 }
@@ -42,6 +49,37 @@ install_addon() {
 {% for addon in cs2_addons %}
 install_addon {{ addon.name | quote }} {{ addon.url | quote }} {{ addon.subdir | default('.') | quote }} {{ addon.dest | default('.') | quote }}
 {% endfor %}
+
+# CounterStrikeSharp on/off switch (cs2_css_enabled): Metamod only loads
+# plugins that have a .vdf, so toggling is a rename and survives restarts.
+VDF="${CSGO}/addons/metamod/counterstrikesharp.vdf"
+{% if cs2_css_enabled %}
+[[ -f "${VDF}.disabled" ]] && mv "${VDF}.disabled" "${VDF}" && echo "pre-hook: CounterStrikeSharp enabled"
+{% else %}
+[[ -f "${VDF}" ]] && mv "${VDF}" "${VDF}.disabled" && echo "pre-hook: CounterStrikeSharp disabled (cs2_css_enabled: false)"
+{% endif %}
+
+# Plugins listed in cs2_disabled_plugins stay installed but out of CSS's way.
+PLUGINS="${CSGO}/addons/counterstrikesharp/plugins"
+DISABLED_PLUGINS=({% for name in cs2_disabled_plugins %}{{ name | quote }} {% endfor %})
+if [[ -d "${PLUGINS}" ]]; then
+    mkdir -p "${PLUGINS}/disabled"
+    for name in "${DISABLED_PLUGINS[@]}"; do
+        if [[ -d "${PLUGINS}/${name}" ]]; then
+            rm -rf "${PLUGINS}/disabled/${name}"
+            mv "${PLUGINS}/${name}" "${PLUGINS}/disabled/${name}"
+            echo "pre-hook: plugin ${name} disabled"
+        fi
+    done
+    for dir in "${PLUGINS}"/disabled/*/; do
+        [[ -d "${dir}" ]] || continue
+        name="$(basename "${dir}")"
+        [[ " ${DISABLED_PLUGINS[*]} " == *" ${name} "* ]] && continue
+        rm -rf "${PLUGINS:?}/${name}"
+        mv "${dir%/}" "${PLUGINS}/${name}"
+        echo "pre-hook: plugin ${name} enabled"
+    done
+fi
 
 # Some archives ship read-only directories, which would block later installs.
 chmod -R u+rwX "${CSGO}/addons"

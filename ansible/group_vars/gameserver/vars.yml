@@ -63,27 +63,42 @@ games:
 # just that entry. `subdir` is the folder inside the archive to copy from;
 # `dest` is relative to game/csgo. CS2 runs on Steam Runtime 4.
 #
-# KNOWN BROKEN since CS2 1.41.8.2 (2026-09-22), installed anyway so the whole
-# setup is ready the moment upstream ships fixes. Tested live on that build:
-#   - CounterStrikeSharp 1.0.374 loads, but its stale gamedata crashes the
-#     server on Teleport (upstream PRs roflmuffin/CounterStrikeSharp
-#     #1432/#1433), so DON'T PLAY on this until CSS ships a newer release.
-#   - MovementUnlocker v2.0 needs Metamod's SourceHook API 18 (fails to load
-#     on the pinned 1411, segfaults on 1469). RampBugFix 5-1 / STFixes 10-22
-#     fail with "undefined symbol g_bUpdateStringTokenDatabase" (built against
-#     an older tier0). All three fail gracefully with Metamod 1411.
-#   - SharpTimer 0.4.0: "RunCommand hook failed. Signature is likely outdated"
-#     (movement features disabled until its stgamedata.json is updated).
-# Metamod is pinned to 1411 because CSS 1.0.374 speaks SourceHook API 17 and
-# master (1467+) moved to API 18 (KHook). When CSS ships its KHook release,
-# bump Metamod to the newest build in the same change.
+# Status after CS2 1.41.8.2 (2026-09-22), tested live on 2026-09-24:
+#   - CounterStrikeSharp 1.0.375 (first release with the official fix, PR
+#     roflmuffin/CounterStrikeSharp #1433) needs Metamod's SourceHook API 18,
+#     hence Metamod 1469. 1.0.374 aborted the server with a core dump when the
+#     first player connected, even with the community gamedata patch (#1432).
+#   - NOT installed: MovementUnlocker v2.0 segfaults at boot on this build.
+#     Re-add https://github.com/Source2ZE/MovementUnlocker (steamrt4 tarball)
+#     when a newer release exists.
+#   - Installed but failing to load (harmless): RampBugFix 5-1 and STFixes
+#     10-22, "undefined symbol g_bUpdateStringTokenDatabase" (built against an
+#     older tier0).
+#   - SharpTimer 0.4.0 loads but reports "RunCommand hook failed. Signature is
+#     likely outdated": its timer movement features stay off until upstream
+#     updates stgamedata.json.
+#
+# cs2_css_enabled is the kill switch for the whole CounterStrikeSharp layer:
+# while false, pre.sh renames counterstrikesharp.vdf so Metamod doesn't load
+# it (and none of its plugins run). Turn it off first if players get dropped
+# right after connecting, to separate a plugin problem from a network one.
+cs2_css_enabled: true
+
+# CounterStrikeSharp plugins kept installed but moved to plugins/disabled/ by
+# pre.sh (CSS does not load that folder). Bisected live on 2026-09-24: with
+# CSS 1.0.375 the server core-dumps when the first player connects while
+# K4-Arenas and/or SharpTimer are loaded, and is stable without them (core
+# only, and core + Tags + GG1MapChooser + Map-Configs, both with players
+# connected). Remove a name from this list to enable it again.
+cs2_disabled_plugins:
+  - K4-Arenas
+  - SharpTimer
+
 cs2_addons:
   - name: metamod
-    url: https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1411/mmsource-2.0.0-git1411-linux.tar.gz
+    url: https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1469/mmsource-2.0.0-git1469-linux.tar.gz
   - name: counterstrikesharp
-    url: https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.374/counterstrikesharp-with-runtime-linux-1.0.374.zip
-  - name: movementunlocker
-    url: https://github.com/Source2ZE/MovementUnlocker/releases/download/v2.0/MovementUnlocker-v2.0-steamrt4.tar.gz
+    url: https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.375/counterstrikesharp-with-runtime-linux-1.0.375.zip
   - name: rampbugfix
     url: https://github.com/Interesting-exe/CS2Fixes-RampbugFix/releases/download/5-1/CS2Fixes-RampbugFix-5-1-linux.tar.gz
   - name: stfixes

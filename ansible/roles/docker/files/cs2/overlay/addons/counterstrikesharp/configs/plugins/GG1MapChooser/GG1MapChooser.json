@@ -5,8 +5,8 @@
     "MapsInVote": 5,
     "VotesToWin": 0.6,
     "AllowNominate": true,
-    "NominationsMenuMode": "both",
-    "EndMapVoteMenuMode": "both",
+    "NominationsMenuMode": "chat",
+    "EndMapVoteMenuMode": "chat",
     "YesNoVotePanorama": true,
     "PanoramaSFUIString": "#SFUI_Vote_None",
     "VotingTime": 25,
@@ -47,7 +47,7 @@
     "VotingTime": 20,
     "BlockBeforeMapVoteSeconds": 60,
     "BlockBeforeMapVoteRounds": 1,
-    "MenuMode": "both"
+    "MenuMode": "chat"
   },
   "DiscordSettings": {
     "DiscordWebhook": "",
