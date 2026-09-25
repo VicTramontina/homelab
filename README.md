@@ -4,7 +4,7 @@ Turns an old PC into an on-demand game server host, controlled entirely
 from Discord. The PC stays off/asleep most of the time: it wakes via
 Wake-on-LAN when someone wants to play, and shuts itself down again after
 being idle, with backups to Cloudflare R2 happening right before anything
-stops. First (and currently only) supported game: **HumanityZ**.
+stops. Supported games: **HumanityZ**, **CS2** and **Windrose**.
 
 No always-on infrastructure beyond free-tier services -- the Discord bot
 is a Cloudflare Worker (HTTP interactions, not a 24/7 gateway bot), and

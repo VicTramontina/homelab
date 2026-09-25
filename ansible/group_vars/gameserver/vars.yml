@@ -178,6 +178,14 @@ cs2_mode_prefixes:
   de_: default
   cs_: default
 
+# CounterStrikeSharp plugins loaded only while a mode is active, and unloaded
+# in every other mode. The cs2-modes watcher runs gkz_load/gkz_unload (from
+# Map-Configs-GoldKingZ) once the map has loaded. They must be present in
+# plugins/ or plugins/disabled/ (see cs2_disabled_plugins).
+cs2_mode_plugins:
+  arena:
+    - K4-Arenas
+
 # Ports that need host-level firewall protection (ansible/roles/firewall)
 # because their game service runs with `network_mode: host` in
 # server/docker-compose.yml -- Docker's own loopback-only port mapping

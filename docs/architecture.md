@@ -225,6 +225,11 @@ re-applies the mode 20s after each load, using `cs2_mode_prefixes`. Every
 mode cfg is self-contained (it sets every knob), because Map-Configs locks
 cvars a cfg sets and a later cfg cannot override an earlier one.
 
+The same service loads and unloads mode-only plugins (`cs2_mode_plugins`:
+K4-Arenas in `arena`) with `gkz_load`/`gkz_unload` once the map is up.
+Map-Configs cannot do it from its own cfgs: it runs before the map exists, so
+K4-Arenas found no spawn points and failed to load.
+
 Modes (see the cfgs for exact values): `bhop` and `surf` are deathmatch with
 autobhop on, invincible (damage scale 0), no collision (all humans on CT,
 `mp_solid_teammates 0`), no bonus-weapon HUD, respawn protection; they differ

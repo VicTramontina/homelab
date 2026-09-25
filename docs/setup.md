@@ -226,3 +226,18 @@ In the repo's Settings -> Secrets and variables -> Actions, add:
 7. Have a friend connect using the playit.gg address from step 4.3
    (`something.gl.at.ply.gg:PORT`), not your home IP -- that's the whole
    point of the tunnel, nobody needs a VPN or your router touched.
+
+## 11. Windrose: check the player count once, live
+
+Windrose has no RCON, so its player count is parsed from the container
+log (see `docs/architecture.md`, "Windrose"). That parser hasn't been run
+against a real session yet, so confirm it before trusting idle shutdown:
+
+1. `/start windrose`, wait for the first-run install (several GB), then
+   join from the game using the playit.gg address of the `7780` tunnel.
+2. On the server: `docker logs windrose 2>&1 | grep -Ei "join succeeded|leave:"`
+   should show one line per join and leave.
+3. `/status windrose` should show the right player count, going back to 0
+   after everyone leaves. If the grep shows nothing, or the count is wrong,
+   fix the patterns in `ansible/files/game_adapters/windrose.py` before
+   leaving the game to idle-stop on its own.
