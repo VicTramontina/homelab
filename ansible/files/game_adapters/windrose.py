@@ -1,67 +1,86 @@
 """Player-count adapter for Windrose (no RCON, counts from container logs).
 
 The dedicated server has no RCON, console or web API, so the count is
-derived from the container's own log since its last start: a
-"LogNet: Join succeeded: <player>" line adds a player and a
-"LogNet: Leave: <player>" line removes them.
+derived from the container's own log. A player is online from the line
+"OnClientIsReady  Client id ReadyToPlay. AccountId <id>" (the client has
+finished loading, which is when it actually counts as playing) until a
+"Disconnect AccountId <id>" or "Account disconnected. AccountId <id>" line.
+Players still loading are not counted.
 
-A miss in the leave direction over-counts (the game just never looks idle,
-which is harmless). A miss in the join direction is the dangerous one, since
-it would let activity-monitor stop a game with people in it. To cover that,
-if connection markers show up in the log but no join line was ever matched,
+The log is very verbose and Docker rotates it, so the online set is kept in
+memory and each call only reads what was logged since the previous one; a
+full re-read (from the container's last start) happens only when the
+container restarts or the daemon itself starts. That keeps a long-connected
+player from vanishing from the count when their join line rotates out.
+
+If connection attempts show up in the log but no ready line was ever seen,
 the log format is treated as unrecognized and the pass is skipped instead of
-reporting zero.
+reporting zero, so activity-monitor can't stop a game with people in it.
 """
 import re
 import subprocess
+from datetime import datetime, timedelta, timezone
 
 from rcon_client import RconError
 
-_JOIN_RE = re.compile(r"LogNet: Join succeeded:\s*(.+?)\s*$", re.IGNORECASE)
-_LEAVE_RE = re.compile(r"LogNet: Leave:\s*(.+?)\s*$", re.IGNORECASE)
-_CONNECTION_MARKERS = ("login request", "notifyacceptingconnection", "notifyacceptedconnection")
+_READY_RE = re.compile(r"Client id ReadyToPlay\.\s+AccountId\s+(\w+)")
+_LEAVE_RE = re.compile(r"(?:Disconnect AccountId|Account disconnected\.\s+AccountId)\s+(\w+)")
+_LOGIN_MARKER = "login request"
+_OVERLAP = timedelta(seconds=5)
+
+_state: dict[str, dict] = {}
 
 
 def _run(args: list[str]) -> subprocess.CompletedProcess:
     try:
-        return subprocess.run(args, capture_output=True, text=True, check=False, timeout=20)
+        return subprocess.run(
+            args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False, timeout=20
+        )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise RconError(f"could not run {args[0]} {args[1]}: {exc}") from exc
+
+
+def _read_new_lines(service: str, since: str) -> list[str]:
+    logs = _run(["docker", "logs", "--since", since, service])
+    if logs.returncode != 0:
+        raise RconError(f"docker logs failed for {service}: {logs.stdout.strip()[-200:]}")
+    return logs.stdout.splitlines()
 
 
 def get_player_count_local(game: dict) -> int:
     service = game["compose_service"]
 
     inspect = _run(["docker", "inspect", "-f", "{{.State.StartedAt}}", service])
-    if inspect.returncode != 0 or not inspect.stdout.strip():
-        raise RconError(f"docker inspect failed for {service}: {inspect.stderr.strip()}")
+    started_at = inspect.stdout.strip()
+    if inspect.returncode != 0 or not started_at:
+        raise RconError(f"docker inspect failed for {service}: {started_at}")
 
-    logs = _run(["docker", "logs", "--since", inspect.stdout.strip(), service])
-    if logs.returncode != 0:
-        raise RconError(f"docker logs failed for {service}: {logs.stderr.strip()}")
+    state = _state.get(service)
+    if state is None or state["started_at"] != started_at:
+        state = {"started_at": started_at, "cursor": started_at, "online": set(), "ready_seen": 0, "logins_seen": 0}
+        _state[service] = state
 
-    online: set[str] = set()
-    joins_seen = 0
-    markers_seen = 0
-    for line in (logs.stdout + "\n" + logs.stderr).splitlines():
-        join = _JOIN_RE.search(line)
-        if join:
-            online.add(join.group(1))
-            joins_seen += 1
+    poll_started = datetime.now(timezone.utc)
+    for line in _read_new_lines(service, state["cursor"]):
+        ready = _READY_RE.search(line)
+        if ready:
+            state["online"].add(ready.group(1))
+            state["ready_seen"] += 1
             continue
 
         leave = _LEAVE_RE.search(line)
         if leave:
-            online.discard(leave.group(1))
+            state["online"].discard(leave.group(1))
             continue
 
-        lowered = line.lower()
-        if any(marker in lowered for marker in _CONNECTION_MARKERS):
-            markers_seen += 1
+        if _LOGIN_MARKER in line.lower():
+            state["logins_seen"] += 1
 
-    if markers_seen and not joins_seen:
+    state["cursor"] = (poll_started - _OVERLAP).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    if state["logins_seen"] and not state["ready_seen"]:
         raise RconError(
-            f"{service} log shows {markers_seen} connection lines but no 'Join succeeded' line: "
-            "log format not recognized, refusing to report 0 players"
+            f"{service} log shows {state['logins_seen']} login requests but no 'ReadyToPlay' line: "
+            "still loading or log format not recognized, refusing to report 0 players"
         )
-    return len(online)
+    return len(state["online"])
