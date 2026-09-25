@@ -32,6 +32,12 @@ vault_join_pass_windrose: "changeme-join-password"
 # leave this unset if you don't want to register a token.
 vault_gslt_cs2: "changeme-gslt-token"
 
+# MySQL used by CS2 plugins (K4-Arenas weapon preferences and stats). The
+# database is only initialised with these on its first start; changing them
+# later needs the data volume recreated (or the password changed inside MySQL).
+vault_mysql_root_password: "changeme-mysql-root-password"
+vault_mysql_password_k4arenas: "changeme-mysql-k4arenas-password"
+
 # Cloudflare R2 (S3-compatible) credentials for the backup-scheduler role
 vault_r2_access_key_id: "changeme-r2-access-key-id"
 vault_r2_secret_access_key: "changeme-r2-secret-access-key"

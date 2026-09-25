@@ -113,6 +113,19 @@
     game_name: "{{ game_entry.key }}"
     game: "{{ game_entry.value }}"
 
+- name: Create MySQL data directory
+  ansible.builtin.file:
+    path: "{{ homelab_dir }}/server/volumes/mysql"
+    state: directory
+    mode: "0755"
+
+- name: Render MySQL env file (root and K4-Arenas passwords)
+  ansible.builtin.template:
+    src: mysql.env.j2
+    dest: "{{ homelab_dir }}/server/mysql.env"
+    mode: "0600"
+  no_log: true
+
 - name: Create Docker Compose services without starting them
   ansible.builtin.command:
     cmd: docker compose -f {{ homelab_dir }}/server/docker-compose.yml up --no-start
@@ -126,5 +139,13 @@
 - name: Start netdata
   ansible.builtin.command:
     cmd: docker compose -f {{ homelab_dir }}/server/docker-compose.yml up -d netdata
+    chdir: "{{ homelab_dir }}/server"
+  changed_when: true
+
+# Same as netdata: MySQL runs continuously (restart: unless-stopped) so it is
+# up before any game, and game-manager does not know it exists.
+- name: Start mysql
+  ansible.builtin.command:
+    cmd: docker compose -f {{ homelab_dir }}/server/docker-compose.yml up -d mysql
     chdir: "{{ homelab_dir }}/server"
   changed_when: true

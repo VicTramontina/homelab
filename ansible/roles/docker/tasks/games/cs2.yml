@@ -50,6 +50,25 @@
     owner: "999"
     group: "988"
 
+- name: "[{{ game_name }}] Create K4-Arenas config directory in the overlay"
+  ansible.builtin.file:
+    path: "{{ game.volume_path }}/homelab-overlay/addons/counterstrikesharp/configs/plugins/K4-Arenas"
+    state: directory
+    mode: "0755"
+    owner: "999"
+    group: "988"
+
+# Holds the MySQL password, so it is templated here instead of living in
+# overlay/. 0600: only the container user needs to read it.
+- name: "[{{ game_name }}] Stage K4-Arenas config (MySQL credentials from the vault)"
+  ansible.builtin.template:
+    src: games/K4-Arenas.json.j2
+    dest: "{{ game.volume_path }}/homelab-overlay/addons/counterstrikesharp/configs/plugins/K4-Arenas/K4-Arenas.json"
+    mode: "0600"
+    owner: "999"
+    group: "988"
+  no_log: true
+
 - name: "[{{ game_name }}] Stage GG1MapChooser map pools (one per mode, from cs2_maps)"
   ansible.builtin.template:
     src: games/GGMCmaps.json.j2

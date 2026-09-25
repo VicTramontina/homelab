@@ -116,6 +116,24 @@ same "no port forwarding on the router" invariant described below --
 **not** tunneled through playit.gg like the game ports, since the
 dashboard has no authentication of its own.
 
+## MySQL (CS2 plugin data)
+
+K4-Arenas keeps each player's weapon and round preferences and stats in
+MySQL, so `server/docker-compose.yml` has a `mysql` service (MySQL 8.4,
+small buffer pool). Like netdata it runs continuously (`restart:
+unless-stopped`, started by the `docker` role), not on demand like the games:
+Docker brings it back on every boot, so it is up before any game and cs2 needs
+no `depends_on` (game-manager runs `docker compose start cs2`, which ignores
+dependencies). It is bound to `127.0.0.1:3306` only and reached by cs2 over
+host networking; it is never tunneled.
+
+Credentials come from the vault (`vault_mysql_root_password`,
+`vault_mysql_password_k4arenas`), rendered into `server/mysql.env` and into
+K4-Arenas' own config (`templates/games/K4-Arenas.json.j2`, 0600). The
+database and user are created only when the data volume is empty, so changing
+the vault passwords later does not change an existing database. The
+`volumes/mysql` directory is not covered by `backup.sh`.
+
 ## Networking: no port forwarding
 
 The PC sits behind a home router the owner doesn't want to touch (no port

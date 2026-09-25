@@ -178,6 +178,12 @@ cs2_mode_prefixes:
   de_: default
   cs_: default
 
+# MySQL (server/docker-compose.yml, `mysql` service) for CS2 plugin data.
+# K4-Arenas keeps player weapon/round preferences and stats there. The
+# passwords are vault_mysql_root_password and vault_mysql_password_k4arenas.
+mysql_k4arenas_db: k4arenas
+mysql_k4arenas_user: k4arenas
+
 # CounterStrikeSharp plugins loaded only while a mode is active, and unloaded
 # in every other mode. The cs2-modes watcher runs gkz_load/gkz_unload (from
 # Map-Configs-GoldKingZ) once the map has loaded. They must be present in
