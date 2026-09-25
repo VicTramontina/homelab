@@ -134,6 +134,12 @@ cs2_addons:
   # !rtv, !nominate, !rtm (vote the pool), admin map change; one pool per mode
   # generated from cs2_maps (templates/games/GGMCmaps.json.j2). Workshop maps
   # by id, actively maintained (v1.8.0, 2026-05).
+  # !help / !commands / !info / !? : numbered chat menu of the commands above
+  # (text in overlay/.../ChatInfo/ChatInfo.json, en and pt). Plain plugin, no
+  # game data, so it does not break with CS2 updates.
+  - name: chat-info
+    url: https://github.com/Kandru/cs2-chat-info/releases/download/26.05.1/cs2-chat-info-release-26.05.1.zip
+    dest: addons/counterstrikesharp/plugins
   - name: gg1mapchooser
     url: https://github.com/ssypchenko/GG1MapChooser/releases/download/v1.8.0/GG1MapChooser.1.8.0.zip
     subdir: csgo

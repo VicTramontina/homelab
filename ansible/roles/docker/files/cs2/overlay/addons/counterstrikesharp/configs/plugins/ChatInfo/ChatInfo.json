@@ -1,0 +1,120 @@
+{
+  "enabled": true,
+  "debug": false,
+  "messages": {
+    "Maps": {
+      "description": {
+        "en": "Map voting and nominations",
+        "pt": "Votacao e indicacao de mapas"
+      },
+      "sub_commands": {
+        "!rtv": {
+          "description": {
+            "en": "Ask for a map vote",
+            "pt": "Pedir votacao de mapa"
+          },
+          "sub_commands": {}
+        },
+        "!nominate <map>": {
+          "description": {
+            "en": "Nominate a map of the active pool",
+            "pt": "Indicar um mapa do pool ativo"
+          },
+          "sub_commands": {}
+        },
+        "!rtm": {
+          "description": {
+            "en": "Vote the pool: Bhop, Surf or Arena",
+            "pt": "Votar o pool: Bhop, Surf ou Arena"
+          },
+          "sub_commands": {}
+        },
+        "!nextmap": {
+          "description": {
+            "en": "Show the next map",
+            "pt": "Mostra o proximo mapa"
+          },
+          "sub_commands": {}
+        },
+        "!timeleft": {
+          "description": {
+            "en": "Time left on this map",
+            "pt": "Tempo restante neste mapa"
+          },
+          "sub_commands": {}
+        },
+        "!revote": {
+          "description": {
+            "en": "Reopen the vote menu",
+            "pt": "Reabre o menu de votacao"
+          },
+          "sub_commands": {}
+        }
+      }
+    },
+    "Arena 1v1": {
+      "description": {
+        "en": "Commands on arena maps (aim_, am_)",
+        "pt": "Comandos nos mapas de arena (aim_, am_)"
+      },
+      "sub_commands": {
+        "!guns": {
+          "description": {
+            "en": "Choose your favorite weapon of each type",
+            "pt": "Escolher sua arma favorita de cada tipo"
+          },
+          "sub_commands": {}
+        },
+        "!rounds": {
+          "description": {
+            "en": "Choose which round types you accept",
+            "pt": "Escolher quais tipos de round voce aceita"
+          },
+          "sub_commands": {}
+        },
+        "!queue": {
+          "description": {
+            "en": "Join or leave the waiting queue",
+            "pt": "Entrar ou sair da fila de espera"
+          },
+          "sub_commands": {}
+        },
+        "!afk": {
+          "description": {
+            "en": "Toggle away from keyboard",
+            "pt": "Marcar ou desmarcar ausente"
+          },
+          "sub_commands": {}
+        },
+        "!challenge": {
+          "description": {
+            "en": "Challenge a friend to a duel (also !duel)",
+            "pt": "Desafiar um amigo para um duelo (tambem !duel)"
+          },
+          "sub_commands": {}
+        },
+        "!caccept": {
+          "description": {
+            "en": "Accept a challenge",
+            "pt": "Aceitar um desafio"
+          },
+          "sub_commands": {}
+        },
+        "!cdecline": {
+          "description": {
+            "en": "Decline a challenge",
+            "pt": "Recusar um desafio"
+          },
+          "sub_commands": {}
+        }
+      }
+    },
+    "Bhop and Surf": {
+      "description": {
+        "en": "Autobhop on, invincible, no collision. No timer yet",
+        "pt": "Autobhop ligado, invencivel, sem colisao. Ainda sem timer"
+      },
+      "sub_commands": {}
+    }
+  }
+}
