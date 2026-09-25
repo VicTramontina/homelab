@@ -85,6 +85,12 @@
     dest: "{{ homelab_dir }}/server/docker-compose.yml"
     mode: "0644"
 
+- name: Copy netdata config (metrics retention)
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../server/netdata.conf"
+    dest: "{{ homelab_dir }}/server/netdata.conf"
+    mode: "0644"
+
 - name: Render shared homelab config.json
   ansible.builtin.template:
     src: "{{ playbook_dir }}/templates/config.json.j2"
@@ -139,13 +145,5 @@
 - name: Start netdata
   ansible.builtin.command:
     cmd: docker compose -f {{ homelab_dir }}/server/docker-compose.yml up -d netdata
-    chdir: "{{ homelab_dir }}/server"
-  changed_when: true
-
-# Same as netdata: MySQL runs continuously (restart: unless-stopped) so it is
-# up before any game, and game-manager does not know it exists.
-- name: Start mysql
-  ansible.builtin.command:
-    cmd: docker compose -f {{ homelab_dir }}/server/docker-compose.yml up -d mysql
     chdir: "{{ homelab_dir }}/server"
   changed_when: true

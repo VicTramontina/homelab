@@ -48,6 +48,8 @@ games:
     # config.json.j2 defaults `backup` to true when a game omits it, so
     # every other game keeps backing up without needing this key at all.
     backup: false
+    companion_services:
+      - mysql
     # game_type-specific knobs, read by games/cs2.yml /
     # templates/games/cs2.env.j2 only -- the generic Python daemons never
     # look at these.

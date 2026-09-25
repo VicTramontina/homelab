@@ -115,6 +115,9 @@ services:
     network_mode: host
     env_file:
       - ./windrose.env
+    tmpfs:
+      - /data/R5/Saved/Logs:size=128m,uid=1000,gid=1000
+      - /data/R5/.sentry-native:size=64m,uid=1000,gid=1000
     volumes:
       - ./volumes/windrose/data:/data
       - ./volumes/windrose/steam-home:/home/steam
@@ -149,6 +152,7 @@ services:
       - apparmor:unconfined
     volumes:
       - netdataconfig:/etc/netdata
+      - ./netdata.conf:/etc/netdata/netdata.conf:ro
       - netdatalib:/var/lib/netdata
       - netdatacache:/var/cache/netdata
       - /etc/passwd:/host/etc/passwd:ro
@@ -159,11 +163,11 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   # MySQL for CS2 plugin data (K4-Arenas weapon/round preferences and stats).
-  # Like netdata it runs continuously (restart: unless-stopped, started by the
-  # docker role), not on demand like the games: Docker brings it back on every
-  # boot, so it is always up before any game starts and cs2 needs no hard
-  # depends_on (game-manager uses `docker compose start cs2`, which ignores
-  # dependencies anyway). A plugin that cannot reach it only logs an error.
+  # Not a standalone service: cs2 lists it as a companion_services entry in
+  # ansible/group_vars/gameserver/vars.yml, so game-manager starts it (and waits
+  # for its healthcheck) before cs2 and stops it after cs2 stops. That is why it
+  # has no restart policy and no hard depends_on (`docker compose start`
+  # ignores dependencies anyway).
   #
   # Loopback only: cs2 runs with host networking and reaches it on
   # 127.0.0.1:3306; nothing else needs it, and it is never tunneled. The
@@ -177,7 +181,7 @@ services:
   mysql:
     image: mysql:8.4
     container_name: mysql
-    restart: unless-stopped
+    restart: "no"
     logging: *default-logging
     env_file:
       - ./mysql.env

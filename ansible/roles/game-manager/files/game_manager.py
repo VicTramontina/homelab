@@ -105,10 +105,9 @@ def game_label(config: dict, game: str) -> str:
     return config["games"][game].get("label", game)
 
 
-def wait_for_ready(config: dict, game: str) -> bool:
+def wait_for_service(service: str) -> bool:
     """Poll until the container is healthy (or just running, for images
     with no healthcheck defined) or READY_TIMEOUT_SECONDS elapses."""
-    service = config["games"][game]["compose_service"]
     deadline = time.time() + READY_TIMEOUT_SECONDS
     while time.time() < deadline:
         result = subprocess.run(
@@ -129,6 +128,30 @@ def wait_for_ready(config: dict, game: str) -> bool:
                 return True
         time.sleep(READY_POLL_INTERVAL_SECONDS)
     return False
+
+
+def wait_for_ready(config: dict, game: str) -> bool:
+    return wait_for_service(config["games"][game]["compose_service"])
+
+
+def companions_of(config: dict, game: str) -> list[str]:
+    return config["games"][game].get("companion_services", [])
+
+
+def start_companions(config: dict, game: str) -> bool:
+    companions = companions_of(config, game)
+    if not companions:
+        return True
+    compose(config, "start", *companions)
+    return all(wait_for_service(companion) for companion in companions)
+
+
+def stop_unneeded_companions(config: dict, game: str) -> None:
+    still_running = [name for name in running_games(config) if name != game]
+    needed = {companion for name in still_running for companion in companions_of(config, name)}
+    unneeded = [companion for companion in companions_of(config, game) if companion not in needed]
+    if unneeded:
+        compose(config, "stop", *unneeded)
 
 
 def running_games(config: dict) -> list[str]:
@@ -152,6 +175,8 @@ def handle_command(config: dict, payload: dict) -> None:
 
     if action == "start_game" and target in config["games"]:
         label = game_label(config, target)
+        if not start_companions(config, target):
+            notify_discord(config, f"⚠️ A service **{label}** depends on did not become healthy. Check `/status`.")
         compose(config, "start", config["games"][target]["compose_service"])
         if wait_for_ready(config, target):
             notify_discord(config, f"✅ **{label}** is up and ready to play!")
@@ -165,6 +190,7 @@ def handle_command(config: dict, payload: dict) -> None:
         label = game_label(config, target)
         backed_up = run_backup(config, target)
         compose(config, "stop", config["games"][target]["compose_service"])
+        stop_unneeded_companions(config, target)
         suffix = "backup done" if backed_up else "no backup for this game"
         notify_discord(config, f"⏸️ **{label}** stopped ({source_desc}), {suffix}.")
 

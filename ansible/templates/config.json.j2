@@ -17,7 +17,8 @@
       "rcon_pass": "{{ vars['vault_rcon_pass_' + name] | default('') }}",
       "max_players": {{ game.max_players }},
       "volume_path": "{{ game.volume_path }}",
-      "backup": {{ (game.backup | default(true)) | lower }}
+      "backup": {{ (game.backup | default(true)) | lower }},
+      "companion_services": {{ game.companion_services | default([]) | to_json }}
     }{% if not loop.last %},{% endif %}
 
 {% endfor %}

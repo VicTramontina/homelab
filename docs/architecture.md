@@ -116,16 +116,20 @@ same "no port forwarding on the router" invariant described below --
 **not** tunneled through playit.gg like the game ports, since the
 dashboard has no authentication of its own.
 
+Metrics history is capped by `server/netdata.conf` at 7 days on every
+storage tier (netdata's own default is 14 days to 2 years, each tier also
+capped at 1 GiB), so it can't grow the disk indefinitely.
+
 ## MySQL (CS2 plugin data)
 
 K4-Arenas keeps each player's weapon and round preferences and stats in
 MySQL, so `server/docker-compose.yml` has a `mysql` service (MySQL 8.4,
-small buffer pool). Like netdata it runs continuously (`restart:
-unless-stopped`, started by the `docker` role), not on demand like the games:
-Docker brings it back on every boot, so it is up before any game and cs2 needs
-no `depends_on` (game-manager runs `docker compose start cs2`, which ignores
-dependencies). It is bound to `127.0.0.1:3306` only and reached by cs2 over
-host networking; it is never tunneled.
+small buffer pool). It is a *companion* of cs2 (`companion_services` in
+`vars.yml`), not an always-on service: game-manager starts it and waits for
+its healthcheck before starting cs2, and stops it after cs2 stops (unless
+another running game also lists it). It has no restart policy, so it stays
+down when no game needs it. It is bound to `127.0.0.1:3306` only and reached
+by cs2 over host networking; it is never tunneled.
 
 Credentials come from the vault (`vault_mysql_root_password`,
 `vault_mysql_password_k4arenas`), rendered into `server/mysql.env` and into
@@ -327,15 +331,22 @@ Windrose's dedicated server is Windows-only; the community image
 `server/docker-compose.yml`) runs it under Wine and installs it with
 SteamCMD into the mounted volume. It has no RCON, console or web API, so:
 
-- **Player count** comes from `game_adapters/windrose.py`, which reads
-  `docker logs` since the container's last start and tracks
-  `LogNet: Join succeeded:` / `LogNet: Leave:` lines. If connection lines
-  appear but no join line was ever matched, it raises instead of returning
-  0, so activity-monitor skips the pass rather than stopping a game with
-  people in it. This parser is based on the image's own log handling and
-  still needs confirming against a real session (see `docs/setup.md`).
+- **Player count** comes from `game_adapters/windrose.py`. A player counts
+  from the log line `Client id ReadyToPlay. AccountId <id>` (client done
+  loading) until `Disconnect AccountId <id>` or `Account disconnected.
+  AccountId <id>`. The set is kept in memory and only new log lines are
+  read on each poll, because the game's log is verbose and Docker rotates
+  it. If login requests appear but no ready line was ever seen (first join
+  can take minutes while the world generates), it raises instead of
+  returning 0, so activity-monitor skips the pass rather than stopping a
+  game with people in it. Patterns verified against a real session on
+  2026-09-25.
 - **Connection** uses the game's `UseDirectConnection` mode through the
   playit.gg tunnel (TCP+UDP, port `7780`), not the invite-code flow.
+- **Disk writes:** the game's own log (`R5/Saved/Logs`, flushed per line)
+  and crash reporter (`R5/.sentry-native`) are mounted as `tmpfs`, so they
+  don't share ext4 journal commits with the fsyncs of the world database.
+  They are lost on container restart, which is fine.
 - **Backup** covers only `R5/Saved` (the world saves); the rest of the
   volume is the installed server and Wine prefix.
 - Settings are env-driven through `server/windrose.env`, rendered by
