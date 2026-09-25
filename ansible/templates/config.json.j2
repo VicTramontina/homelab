@@ -12,9 +12,9 @@
       "label": "{{ game.label | default(name) }}",
       "game_type": "{{ game.game_type }}",
       "compose_service": "{{ game.compose_service }}",
-      "rcon_host": "{{ game.rcon_host }}",
-      "rcon_port": {{ game.rcon_port }},
-      "rcon_pass": "{{ vars['vault_rcon_pass_' + name] }}",
+      "rcon_host": "{{ game.rcon_host | default('') }}",
+      "rcon_port": {{ game.rcon_port | default(0) }},
+      "rcon_pass": "{{ vars['vault_rcon_pass_' + name] | default('') }}",
       "max_players": {{ game.max_players }},
       "volume_path": "{{ game.volume_path }}",
       "backup": {{ (game.backup | default(true)) | lower }}

@@ -1,0 +1,20 @@
+---
+- name: "[{{ game_name }}] Create Windrose volume directories"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "1000"
+    group: "1000"
+  loop:
+    - "{{ homelab_dir }}/server/volumes/{{ game_name }}"
+    - "{{ homelab_dir }}/server/volumes/{{ game_name }}/data"
+    - "{{ homelab_dir }}/server/volumes/{{ game_name }}/steam-home"
+    - "{{ game.volume_path }}"
+
+- name: "[{{ game_name }}] Render Windrose env file (server settings, join password)"
+  ansible.builtin.template:
+    src: games/windrose.env.j2
+    dest: "{{ homelab_dir }}/server/{{ game_name }}.env"
+    mode: "0600"
+  no_log: true

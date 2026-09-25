@@ -6,8 +6,14 @@ list players and the shape of its response are not -- each adapter module
 here owns that one game-specific detail behind a single function:
 get_player_count(client: RconClient) -> int.
 
-Adding a game whose RCON dialect isn't already covered by an existing
-adapter means adding one small module here and registering it in
+A game with no RCON at all (Windrose) instead defines
+get_player_count_local(game: dict) -> int, which receives that game's
+config.json entry and may read whatever the host can see (container logs,
+for Windrose). It must raise RconError when it can't produce a count, so
+callers keep skipping the pass exactly as they do for a failed RCON query.
+
+Adding a game whose player-count source isn't already covered by an
+existing adapter means adding one small module here and registering it in
 _ADAPTERS below. No other file (status-daemon, activity-monitor,
 rcon_client.py) needs to change.
 """
@@ -15,11 +21,12 @@ import time
 
 from rcon_client import RconClient, RconError
 
-from . import cs2, humanityz
+from . import cs2, humanityz, windrose
 
 _ADAPTERS = {
     "humanityz": humanityz,
     "cs2": cs2,
+    "windrose": windrose,
 }
 
 # Reconnecting too soon after a previous RCON connection to the same
@@ -31,7 +38,8 @@ _ADAPTERS = {
 _RETRY_DELAY_SECONDS = 1.0
 
 
-def get_player_count(host: str, port: int, password: str, game_type: str, timeout: float = 5.0) -> int:
+def get_player_count(game: dict, timeout: float = 5.0) -> int:
+    game_type = game["game_type"]
     try:
         adapter = _ADAPTERS[game_type]
     except KeyError:
@@ -40,9 +48,12 @@ def get_player_count(host: str, port: int, password: str, game_type: str, timeou
             f"(known: {', '.join(sorted(_ADAPTERS))})"
         ) from None
 
+    if hasattr(adapter, "get_player_count_local"):
+        return adapter.get_player_count_local(game)
+
     for attempt in range(2):
         try:
-            with RconClient(host, port, password, timeout=timeout) as client:
+            with RconClient(game["rcon_host"], game["rcon_port"], game["rcon_pass"], timeout=timeout) as client:
                 return adapter.get_player_count(client)
         except RconError:
             if attempt == 0:

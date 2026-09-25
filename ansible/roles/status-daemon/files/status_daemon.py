@@ -55,11 +55,9 @@ def build_status(config: dict) -> dict:
         players = 0
         if running:
             try:
-                players = get_player_count(
-                    game["rcon_host"], game["rcon_port"], game["rcon_pass"], game["game_type"]
-                )
+                players = get_player_count(game)
             except (RconError, OSError) as exc:
-                print(f"status-daemon: RCON query failed for {name}: {exc}", file=sys.stderr)
+                print(f"status-daemon: player count query failed for {name}: {exc}", file=sys.stderr)
         games[name] = {
             "state": "running" if running else "stopped",
             "players": players,

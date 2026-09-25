@@ -56,9 +56,7 @@ def main() -> int:
     with open("{{ homelab_dir }}/config.json") as f:
         game = json.load(f)["games"]["{{ game_name }}"]
 
-    mode_commands = [f"exec {MODES_DIR}/default"]
-    if mode != "default":
-        mode_commands.append(f"exec {MODES_DIR}/{mode}")
+    mode_commands = [f"exec {MODES_DIR}/{mode}"]
 
     steps = list(mode_commands)
     if target:

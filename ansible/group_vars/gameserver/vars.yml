@@ -57,6 +57,17 @@ games:
     cs2_start_map: de_inferno
     cs2_game_alias: competitive
 
+  windrose:
+    label: Windrose
+    game_type: windrose
+    compose_service: windrose
+    max_players: 4
+    # Back up only the saves: the rest of the volume is the SteamCMD-installed
+    # server plus the Wine prefix (several GB, not save data).
+    volume_path: "{{ homelab_dir }}/server/volumes/windrose/data/R5/Saved"
+    windrose_port: 7780
+    windrose_query_port: 7781
+
 # Metamod:Source and plugins, installed by the generated pre.sh
 # (roles/docker/templates/games/cs2-pre.sh.j2) on container start. Pinned on
 # purpose: bump a URL to upgrade; the marker file makes the change reinstall
@@ -99,6 +110,8 @@ cs2_addons:
     url: https://github.com/alliedmodders/metamod-source/releases/download/2.0.0.1469/mmsource-2.0.0-git1469-linux.tar.gz
   - name: counterstrikesharp
     url: https://github.com/roflmuffin/CounterStrikeSharp/releases/download/v1.0.375/counterstrikesharp-with-runtime-linux-1.0.375.zip
+  - name: movementunlocker
+    url: https://github.com/Source2ZE/MovementUnlocker/releases/download/v2.0.1/MovementUnlocker-v2.0.1-steamrt4.tar.gz
   - name: rampbugfix
     url: https://github.com/Interesting-exe/CS2Fixes-RampbugFix/releases/download/5-1/CS2Fixes-RampbugFix-5-1-linux.tar.gz
   - name: stfixes
@@ -152,6 +165,18 @@ cs2_maps:
     aim_redline: "3139172262"
     am_italy_p: "3452445755"
     aim_gryn: "3344448932"
+
+# Map name prefix -> mode cfg (cfg/homelab/modes/<mode>.cfg). Used by the
+# cs2-modes watcher, which re-applies the mode after every map load. Keep in
+# sync with the prefix cfgs in overlay/cfg/Map-Configs-GoldKingZ/, which set
+# game_type/game_mode early (Map-Configs restarts the map when they change).
+cs2_mode_prefixes:
+  bhop_: bhop
+  surf_: surf
+  aim_: arena
+  am_: arena
+  de_: default
+  cs_: default
 
 # Ports that need host-level firewall protection (ansible/roles/firewall)
 # because their game service runs with `network_mode: host` in

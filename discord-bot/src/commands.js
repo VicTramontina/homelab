@@ -12,6 +12,9 @@ export const GAMES = {
     label: 'CS2',
     rconPort: 27016,
   },
+  windrose: {
+    label: 'Windrose',
+  },
 };
 
 export const GAME_CHOICES = Object.entries(GAMES).map(([value, game]) => ({

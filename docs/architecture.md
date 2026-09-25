@@ -164,6 +164,7 @@ two minutes.
 |------------|-------------|------------------|-----------------------|---------------------|----------------------|
 | HumanityZ  | `humanityz` | `humanityz`      | 7777/udp, 27017/udp   | 8888/tcp            | 15 min, 0 players    |
 | CS2        | `cs2`       | `cs2`            | 27015/tcp+udp         | 27016/tcp (CS2_RCON_PORT) | 15 min, 0 humans (bots don't count) |
+| Windrose   | `windrose`  | `windrose`       | 7780/tcp+udp (+7781/udp query) | none (no RCON) | 15 min, 0 players (from container logs) |
 
 Adding a game means: a new Docker Compose service, a new entry in
 `ansible/group_vars/gameserver/vars.yml` (`games.<name>`, including a
@@ -182,7 +183,9 @@ is `game_type`. It selects two small "adapter" files:
   every `games.<name>` entry, keyed by its `game_type`.
 - `ansible/files/game_adapters/<game_type>.py` -- knows the RCON command
   to list players and how to parse the response, behind one function:
-  `get_player_count(client) -> int`. Registered in
+  `get_player_count(client) -> int`. A game with no RCON defines
+  `get_player_count_local(game) -> int` instead (Windrose parses its
+  container logs) and raises `RconError` when it can't produce a count. Registered in
   `ansible/files/game_adapters/__init__.py`. `rcon_client.py` itself only
   implements the shared Source RCON wire protocol and has no per-game
   knowledge.
@@ -211,10 +214,22 @@ executable-stack flag on addon `.so` files (the runtime's glibc refuses to
 (staged in `homelab-cfg/`) over whatever the addons shipped.
 
 **Mode follows the map.** CS2 never auto-executes a loose per-map cfg, so
-the `Map-Configs-GoldKingZ` plugin does it: `_allmaps_.cfg` resets to
-vanilla and unloads the mode plugins, then the prefix cfg applies its mode
-(`bhop_` and `surf_` -> SharpTimer, `aim_`/`am_` -> the 1v1 rules and
-K4-Arenas ladder). The modes themselves are cfgs in `cfg/homelab/modes/`.
+the `Map-Configs-GoldKingZ` plugin does it: the prefix cfgs in
+`overlay/cfg/Map-Configs-GoldKingZ/` (`bhop_`, `surf_`, `aim_`/`am_`, and
+`de_`/`cs_` for stock maps) run the mode cfgs in `cfg/homelab/modes/`. That
+is not enough on its own: the engine resets the game-rules cvars (autobhop,
+damage scale, round rules) on every level load, after Map-Configs ran, and
+Workshop maps also run their own cfg. So the `homelab-cs2-modes` service
+(`templates/games/cs2-modes-watcher.py.j2`) polls the map over RCON and
+re-applies the mode 20s after each load, using `cs2_mode_prefixes`. Every
+mode cfg is self-contained (it sets every knob), because Map-Configs locks
+cvars a cfg sets and a later cfg cannot override an earlier one.
+
+Modes (see the cfgs for exact values): `bhop` and `surf` are deathmatch with
+autobhop on, invincible (damage scale 0), no collision (all humans on CT,
+`mp_solid_teammates 0`), no bonus-weapon HUD, respawn protection; they differ
+in air accel (1000 vs 150). `arena` is competitive with short rounds and no
+team balancing; `default` is vanilla.
 
 **Map pool.** The server starts on a Workshop map (`cs2_start_workshop_id`)
 and the catalog `cs2_maps` (bhop, surf, 1v1 arenas; picked by lifetime
@@ -265,9 +280,10 @@ on-demand backups (`/backup <game>`) use the same script directly.
 
 ## Idle detection
 
-Idle detection is driven exclusively by RCON player counts (HumanityZ's
+Idle detection is driven exclusively by per-game player counts (HumanityZ's
 `Players` command over its Source-RCON-compatible protocol on port
-8888), polled by activity-monitor every few minutes. Network-traffic
+8888; Windrose has no RCON, so its count is parsed from the container
+log), polled by activity-monitor every few minutes. Network-traffic
 based fallback detection is intentionally not implemented.
 
 - **15 minutes** with 0 players in a *running* game -> activity-monitor
@@ -280,3 +296,25 @@ never stops a container or shuts the machine down itself. game-manager is
 the single executor for all state changes, which is what guarantees the
 backup-before-stop ordering above holds for automatic idle-driven
 shutdowns too, not just manual commands.
+
+## Windrose
+
+Windrose's dedicated server is Windows-only; the community image
+`ghcr.io/uberdudepl/windrose-dedicated-server-docker` (pinned tag in
+`server/docker-compose.yml`) runs it under Wine and installs it with
+SteamCMD into the mounted volume. It has no RCON, console or web API, so:
+
+- **Player count** comes from `game_adapters/windrose.py`, which reads
+  `docker logs` since the container's last start and tracks
+  `LogNet: Join succeeded:` / `LogNet: Leave:` lines. If connection lines
+  appear but no join line was ever matched, it raises instead of returning
+  0, so activity-monitor skips the pass rather than stopping a game with
+  people in it. This parser is based on the image's own log handling and
+  still needs confirming against a real session (see `docs/setup.md`).
+- **Connection** uses the game's `UseDirectConnection` mode through the
+  playit.gg tunnel (TCP+UDP, port `7780`), not the invite-code flow.
+- **Backup** covers only `R5/Saved` (the world saves); the rest of the
+  volume is the installed server and Wine prefix.
+- Settings are env-driven through `server/windrose.env`, rendered by
+  `roles/docker/tasks/games/windrose.yml` (gitignored). Ports are offset
+  from HumanityZ's `7777/udp` so both can run together.

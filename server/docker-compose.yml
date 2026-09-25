@@ -96,6 +96,29 @@ services:
     volumes:
       - ./volumes/cs2:/home/steam/cs2-dedicated
 
+  # Windrose is a Windows-only server run under Wine by the community image
+  # ghcr.io/uberdudepl/windrose-dedicated-server-docker (SteamCMD app
+  # 4129620). Players connect through the playit.gg tunnel with
+  # UseDirectConnection (TCP+UDP on windrose_port) instead of the game's
+  # invite-code relay. Host networking, as upstream ships it and for the same
+  # NAT reasons as cs2. There is no RCON: the player count comes from the
+  # container logs (ansible/files/game_adapters/windrose.py). Ports are
+  # offset from humanityz's 7777/udp so both can run at once. Server name,
+  # password and limits are env-driven; the password lives in windrose.env
+  # (see roles/docker/tasks/games/windrose.yml).
+  windrose:
+    image: ghcr.io/uberdudepl/windrose-dedicated-server-docker:v1.6.4
+    container_name: windrose
+    restart: "no"
+    stop_grace_period: 90s
+    logging: *default-logging
+    network_mode: host
+    env_file:
+      - ./windrose.env
+    volumes:
+      - ./volumes/windrose/data:/data
+      - ./volumes/windrose/steam-home:/home/steam
+
   # Unlike the game services above, netdata IS meant to run continuously
   # whenever the PC is on (restart: unless-stopped) -- it's monitoring the
   # PC itself, not a game session, so there's no "idle" concept for it.

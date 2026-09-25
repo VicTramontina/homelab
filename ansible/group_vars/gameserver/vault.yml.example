@@ -11,7 +11,8 @@
 vault_aio_key: "changeme-adafruit-io-key"
 
 # One vault_rcon_pass_<game> variable per entry in group_vars/gameserver/vars.yml -> games
-# (RCON is admin-only, used by our own daemons -- not what players type to join)
+# (RCON is admin-only, used by our own daemons -- not what players type to join;
+# Windrose has no RCON, so it needs no vault_rcon_pass_windrose)
 vault_rcon_pass_humanityz: "changeme-rcon-password"
 vault_rcon_pass_cs2: "changeme-rcon-password"
 
@@ -21,6 +22,7 @@ vault_rcon_pass_cs2: "changeme-rcon-password"
 # against randoms who stumble onto the playit.gg address, not real security.
 vault_join_pass_humanityz: "changeme-join-password"
 vault_join_pass_cs2: "changeme-join-password"
+vault_join_pass_windrose: "changeme-join-password"
 
 # CS2's Steam Game Server Login Token (GSLT) -- get one from
 # https://steamcommunity.com/dev/managegameservers ("any IP" is fine since

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Decides when a game or the whole PC has been idle long enough to stop.
 
-Idleness is measured purely by RCON player counts, per game:
+Idleness is measured purely by per-game player counts (RCON, or container logs for games without RCON):
   - 15 minutes with zero players in a running game -> publish stop_game
   - 10 minutes with every configured game stopped   -> publish shutdown_pc
 
@@ -91,11 +91,9 @@ def check_games(config: dict, state: dict) -> list[str]:
 
         still_running.append(name)
         try:
-            players = get_player_count(
-                game["rcon_host"], game["rcon_port"], game["rcon_pass"], game["game_type"]
-            )
+            players = get_player_count(game)
         except (RconError, OSError) as exc:
-            print(f"activity-monitor: RCON query failed for {name}, skipping this pass: {exc}", file=sys.stderr)
+            print(f"activity-monitor: player count query failed for {name}, skipping this pass: {exc}", file=sys.stderr)
             continue
 
         if players > 0:

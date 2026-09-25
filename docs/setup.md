@@ -62,6 +62,7 @@ dashboard.
    - HumanityZ: UDP, local port `7777`
    - CS2: **TCP+UDP** in a single tunnel (not two separate ones, which
      would get two different public addresses), local port `27015`
+   - Windrose: **TCP+UDP** in a single tunnel, local port `7780`
 
    playit.gg assigns each tunnel a public address like
    `something.gl.at.ply.gg:12345` -- that's what you give your friends

@@ -87,7 +87,7 @@ chmod -R u+rwX "${CSGO}/addons"
 # Config managed by Ansible (mode and per-map cfgs, plugin configs), staged in
 # homelab-overlay/ (mirrors game/csgo) and applied after every addon so it wins
 # over the example files addons ship.
-rm -f "${CSGO}"/cfg/Map-Configs-GoldKingZ/{aim_,de_,de_dust2}.cfg
+rm -f "${CSGO}"/cfg/Map-Configs-GoldKingZ/{_allmaps_,aim_,de_,de_dust2}.cfg
 if [[ -d "${STEAMAPPDIR}/homelab-overlay" ]]; then
     cp -a "${STEAMAPPDIR}/homelab-overlay/." "${CSGO}/"
 fi

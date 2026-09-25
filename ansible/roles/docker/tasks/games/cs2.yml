@@ -63,3 +63,26 @@
     src: games/cs2-mode.py.j2
     dest: /usr/local/bin/cs2-mode
     mode: "0755"
+
+# The engine resets game-rules cvars on every level load, after the map cfgs
+# ran, so the mode has to be re-applied once the load settled.
+- name: "[{{ game_name }}] Install cs2-modes watcher script"
+  ansible.builtin.template:
+    src: games/cs2-modes-watcher.py.j2
+    dest: "{{ homelab_dir }}/cs2_modes_watcher.py"
+    mode: "0755"
+  notify: Restart cs2-modes watcher
+
+- name: "[{{ game_name }}] Install cs2-modes watcher systemd unit"
+  ansible.builtin.template:
+    src: games/cs2-modes-watcher.service.j2
+    dest: /etc/systemd/system/homelab-cs2-modes.service
+    mode: "0644"
+  notify: Restart cs2-modes watcher
+
+- name: "[{{ game_name }}] Enable and start cs2-modes watcher"
+  ansible.builtin.systemd:
+    name: homelab-cs2-modes
+    enabled: true
+    state: started
+    daemon_reload: true

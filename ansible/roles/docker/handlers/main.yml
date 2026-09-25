@@ -3,3 +3,9 @@
   ansible.builtin.systemd:
     name: systemd-journald
     state: restarted
+
+- name: Restart cs2-modes watcher
+  ansible.builtin.systemd:
+    name: homelab-cs2-modes
+    state: restarted
+    daemon_reload: true
